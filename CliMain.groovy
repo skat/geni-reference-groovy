@@ -30,7 +30,7 @@ class CliMain {
             return
         }
         context.dry = options.'dry-run'
-        context.'base-url' = options.'base-url' ?: 'http://api.geni.skat.dk'
+        context.baseUrl = options.'base-url' ?: 'http://api.geni.skat.dk'
         context.domain = options.domain
         context.cvr = options.cvr
         context.period = options.period
@@ -38,7 +38,7 @@ class CliMain {
     }
 
     def run() {
-        def url = "${context.'base-url'}/${context.domain}/cvr:${context.cvr}/${context.period}/indleveringer"
+        def url = "${context.baseUrl}/${context.domain}/cvr:${context.cvr}/${context.period}/indleveringer"
         RESTClient indlevering = new RESTClient(url)
         new File(context.directory).eachFile {
             println "POST $url/${it.name[0..-5]} content of ${it.name}"
@@ -46,9 +46,20 @@ class CliMain {
                 indlevering.post(
                         path: "/${it.name[0..-5]}",
                         requestContentType: ContentType.APPLICATION_XML,
-                        body: it.getBytes()
-                )
+                        body: it.bytes
+                ).statusCode == 201 || {
+                    println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
+                }
+            }
+            println "GET $url/${it.name[0..-5]}/status"
+            if (!context.dry) {
+                indlevering.get(path: "/${it.name[0..-5]}/status"){ response ->
+                    if (response.body.valid != 'true'){
+                        println "${it.name} er ugyldig med teksten ${response.body.fejl}"
+                    }
+                }
             }
         }
+
     }
 }
