@@ -1,9 +1,8 @@
 @Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
-
+import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-import org.apache.http.entity.ContentType
 
 class CliMain {
     OptionAccessor options
@@ -38,24 +37,25 @@ class CliMain {
     }
 
     def run() {
-        def url = "${context.baseUrl}/${context.domain}/cvr:${context.cvr}/${context.period}/indleveringer"
+        def url = "${context.baseUrl}/${context.domain}/cvr:${context.cvr}/${context.period}/indleveringer/"
         RESTClient indlevering = new RESTClient(url)
         new File(context.directory).eachFile {
-            println "POST $url/${it.name[0..-5]} content of ${it.name}"
+            println "POST $url${it.name[0..-5]} content of ${it.name}"
             if (!context.dry) {
                 indlevering.post(
-                        path: "/${it.name[0..-5]}",
-                        requestContentType: ContentType.APPLICATION_XML,
+                        path: "${it.name[0..-5]}",
+                        requestContentType: ContentType.XML,
                         body: it.bytes
-                ).statusCode == 201 || {
+                ).status == 201 || {
                     println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
                 }
             }
-            println "GET $url/${it.name[0..-5]}/status"
+            println "GET $url${it.name[0..-5]}/status"
             if (!context.dry) {
-                indlevering.get(path: "/${it.name[0..-5]}/status"){ response ->
-                    if (response.body.valid != 'true'){
-                        println "${it.name} er ugyldig med teksten ${response.body.fejl}"
+                indlevering.get(path: "${it.name[0..-5]}/status") { response, json ->
+                    assert response.status == 200
+                    if (json.valid != 'true') {
+                        println "${it.name} er ugyldig med teksterne\n  ${json.error*.description.join("\n  ")}"
                     }
                 }
             }
