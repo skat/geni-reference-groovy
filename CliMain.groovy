@@ -3,7 +3,7 @@
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
 
 import groovyx.net.http.RESTClient
-import static groovyx.net.http.ContentType.*
+import org.apache.http.entity.ContentType
 
 class CliMain {
     OptionAccessor options
@@ -20,18 +20,25 @@ class CliMain {
         options = cli.parse(args)
         if (options.arguments().size != 1) {
             cli.usage()
-            throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size }.")
+            throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
         }
         if (options.help) {
             cli.usage()
             return
         }
-        context.'base-url' = options.'base-url'?: 'http://api.geni.skat.dk'
+        context.'base-url' = options.'base-url' ?: 'http://api.geni.skat.dk'
         context.path = options.path
         context.directory = options.arguments()[0]
     }
 
     def run() {
-        def indlevering = new RESTClient("${context.'base-url'}${context.path}")
+        RESTClient indlevering = new RESTClient("${context.'base-url'}${context.path}")
+        new File(context.directory).eachFile {
+            indlevering.post(
+                    path: "/${it.name}",
+                    requestContentType : ContentType.APPLICATION_XML,
+                    body: it.getBytes()
+            )
+        }
     }
 }
