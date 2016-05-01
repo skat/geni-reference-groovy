@@ -2,6 +2,7 @@
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
 import groovyx.net.http.ContentType
+import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.RESTClient
 
 class CliMain {
@@ -37,22 +38,26 @@ class CliMain {
     }
 
     def run() {
-        def url = "${context.baseUrl}/${context.domain}/cvr:${context.cvr}/${context.period}/indleveringer/"
+        def url = "${context.baseUrl}/${context.domain}/pligtige/cvr:${context.cvr}/perioder/${context.period}/konti/"
         RESTClient indlevering = new RESTClient(url)
         new File(context.directory).eachFile {
-            println "POST $url${it.name[0..-5]} content of ${it.name}"
+            println "POST $url${it.name[0..-5]}/indleveringer content of ${it.name}"
+            def location
             if (!context.dry) {
                 indlevering.post(
-                        path: "${it.name[0..-5]}",
+                        path: "${it.name[0..-5]}/indleveringer",
                         requestContentType: ContentType.XML,
                         body: it.bytes
-                ).status == 201 || {
-                    println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
+                ) { response ->
+                    response.status == 201 || {
+                        println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
+                    }
+                    location = response.headers.location
                 }
             }
-            println "GET $url${it.name[0..-5]}/status"
+            println "GET $location/status"
             if (!context.dry) {
-                indlevering.get(path: "${it.name[0..-5]}/status") { response, json ->
+                indlevering.get(path: "$location/status") { HttpResponseDecorator response, json ->
                     assert response.status == 200
                     if (json.valid != 'true') {
                         println "${it.name} er ugyldig med teksterne\n  ${json.error*.description.join("\n  ")}"
