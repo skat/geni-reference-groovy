@@ -6,6 +6,7 @@ import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.RESTClient
 
 class CliMain {
+    public static final validDomains = ['Udlån', 'Indlån', 'Prioritetslån', 'Pantebrev']
     OptionAccessor options
     LinkedHashMap context = [:]
 
@@ -25,6 +26,11 @@ class CliMain {
             cli.usage()
             throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
         }
+
+        if (!validDomains.contains(options.domain)) {
+            throw new IllegalArgumentException("Domain cannot be '$options.domain'. Must be one of '${validDomains.join("', '")}'.")
+        }
+
         if (options.help) {
             cli.usage()
             return
