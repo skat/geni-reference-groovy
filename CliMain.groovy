@@ -31,6 +31,10 @@ class CliMain {
             throw new IllegalArgumentException("Domain cannot be '$options.domain'. Must be one of '${validDomains.join("', '")}'.")
         }
 
+        if(!(options.period =~ /^[0-9]{4}(-[0-9]{2})?$/)){
+            throw new IllegalArgumentException("Period shall be either a four digit a year ('2017') or year followed by month ('2017-03').")
+        }
+
         if (options.help) {
             cli.usage()
             return
