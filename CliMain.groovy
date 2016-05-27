@@ -11,7 +11,7 @@ import org.apache.http.conn.ssl.SSLSocketFactory
 import java.security.KeyStore
 
 class CliMain {
-    public static final validDomains = ['Udlån', 'Indlån', 'Prioritetslån', 'Pantebrev']
+    public static final validDomains = ['udlån', 'indlån', 'prioritetslån', 'pantebrev']
     public static final String defaultBaseUrl = 'https://api.geni.skat.dk'
     OptionAccessor options
     LinkedHashMap context = [:]
@@ -23,7 +23,7 @@ class CliMain {
             h longOpt: 'help', 'Usage information'
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
-            d longOpt: 'domain', args: 1, 'Reporting domain. e.g. "Udlån"', required: true
+            d longOpt: 'domain', args: 1, 'Reporting domain. e.g. "udlån"', required: true
             c longOpt: 'cvr', args: 1, 'CVR number', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
@@ -70,17 +70,14 @@ class CliMain {
     }
 
     def run() {
-        def url = "${context.baseUrl}/${context.domain}/pligtige/cvr:${context.cvr}/perioder/${context.period}/konti/"
-        RESTClient indlevering = new RESTClient(url)
-        if (context.p12) {
-            indlevering.client.connectionManager.schemeRegistry.register(getScheme(context.p12))
-        }
+        def url = "/${context.domain}/pligtige/${context.cvr}/perioder/${context.period}/konti/"
         new File(context.directory).eachFile {
-            println "POST $url${it.name[0..-5]}/indleveringer content of ${it.name}"
+            println "POST ${context.domain}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
             def location
+            println("${url}${it.name[0..-5]}/indleveringer")
             if (!context.dry) {
-                indlevering.post(
-                        path: "${it.name[0..-5]}/indleveringer",
+                restClient.post(
+                        path: "${url}${it.name[0..-5]}/indleveringer",
                         requestContentType: ContentType.XML,
                         body: it.bytes
                 ) { response ->
@@ -90,17 +87,25 @@ class CliMain {
                     location = response.headers.location
                 }
             }
-            println "GET $location/status"
+            println "${context.baseUrl}${location}"
             if (!context.dry) {
-                indlevering.get(path: "$location/status") { HttpResponseDecorator response, json ->
+                String decodedUrl = URLDecoder.decode(location, 'UTF-8')
+                restClient.get(path: decodedUrl){ HttpResponseDecorator response, json ->
                     assert response.status == 200
                     if (json.valid != 'true') {
-                        println "${it.name} er ugyldig med teksterne\n  ${json.error*.description.join("\n  ")}"
+                        println "${it.name} er ugyldig med teksterne\n  ${json.data?.beskeder?.join("\n  ")}"
                     }
                 }
             }
         }
+    }
 
+    RESTClient getRestClient(){
+        RESTClient client = new RESTClient(context.baseUrl)
+        if (context.p12) {
+            client.client.connectionManager.schemeRegistry.register(getScheme(context.p12))
+        }
+        return client
     }
 
     static Scheme getScheme(String certFilename) {
