@@ -79,7 +79,7 @@ class CliMain {
                 restClient.post(
                         path: "${url}${it.name[0..-5]}/indleveringer",
                         requestContentType: ContentType.XML,
-                        body: it.bytes
+                        body: it.getText('UTF-8')
                 ) { response ->
                     response.status == 201 || {
                         println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
@@ -92,7 +92,8 @@ class CliMain {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
                 restClient.get(path: decodedUrl){ HttpResponseDecorator response, json ->
                     assert response.status == 200
-                    if (json.valid != 'true') {
+                    println("Status på indleveringen er: ${json.data.status}")
+                    if (json.data.status != 'SCHEMA_VALID') {
                         println "${it.name} er ugyldig med teksterne\n  ${json.data?.beskeder?.join("\n  ")}"
                     }
                 }
