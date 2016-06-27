@@ -24,11 +24,17 @@ class CliMain {
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
             d longOpt: 'domain', args: 1, 'Reporting domain. e.g. "udlån"', required: true
-            c longOpt: 'cvr', args: 1, 'CVR number', required: true
+            s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
         }
         options = cli.parse(args)
+        if (!options) {
+            throw new IllegalArgumentException()
+        }
+        if (options.help) {
+            throw new IllegalArgumentException()
+        }
         if (options.arguments().size != 1) {
             cli.usage()
             throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
@@ -56,21 +62,17 @@ class CliMain {
             println ""
         }
 
-        if (options.help) {
-            cli.usage()
-            return
-        }
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
         context.domain = options.domain
-        context.cvr = options.cvr
+        context.se = options.se
         context.period = options.period
         context.p12 = options.p12
         context.directory = options.arguments()[0]
     }
 
     def run() {
-        def url = "/${context.domain}/pligtige/${context.cvr}/perioder/${context.period}/konti/"
+        def url = "/${context.domain}/pligtige/${context.se}/perioder/${context.period}/konti/"
         new File(context.directory).eachFile {
             println "POST ${context.domain}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
             def location
