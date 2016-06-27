@@ -1,14 +1,13 @@
-@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7')
+@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.1')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
 import groovy.io.FileType
 import groovyx.net.http.ContentType
 import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.RESTClient
-import org.apache.http.conn.scheme.Scheme
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier
-import org.apache.http.conn.ssl.SSLSocketFactory
-import java.security.KeyStore
+
+import static groovy.json.JsonOutput.prettyPrint
+import static groovy.json.JsonOutput.toJson
 
 class CliMain {
     public static final validDomains = ['udlån', 'indlån', 'prioritetslån', 'pantebrev']
@@ -82,10 +81,9 @@ class CliMain {
                         path: "${url}${it.name[0..-5]}/indleveringer",
                         requestContentType: ContentType.XML,
                         body: it.bytes
-                ) { response ->
-                    response.status == 201 || {
-                        println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
-                    }
+                ) { response, json ->
+                    assert response.status == 201
+                    println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
                     location = response.headers.location
                 }
             }
@@ -105,16 +103,13 @@ class CliMain {
     RESTClient getRestClient(){
         RESTClient client = new RESTClient(context.baseUrl)
         if (context.p12) {
-            client.client.connectionManager.schemeRegistry.register(getScheme(context.p12))
+            client.auth.certificate(new File(context.p12).toURI().toURL().toString(), '')
+        }
+        client.handler.failure = { HttpResponseDecorator resp, data ->
+            String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
+            throw new RuntimeException("\nHTTP Status code:${resp.status}\n"+
+                    "$headers\nBody:\n${prettyPrint(toJson(data))}")
         }
         return client
-    }
-
-    static Scheme getScheme(String certFilename) {
-        KeyStore keyStore = KeyStore.getInstance('PKCS12')
-        keyStore.load(new FileInputStream(certFilename))
-        SSLSocketFactory socketFactory = new SSLSocketFactory(keyStore)
-        socketFactory.hostnameVerifier = new AllowAllHostnameVerifier()
-        return new Scheme("https", socketFactory, 443)
     }
 }
