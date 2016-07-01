@@ -50,7 +50,9 @@ class CliMain {
         if (!options.p12) {
             def pkcs12List = []
             new File("${System.getProperty('user.home')}/.oces").eachFile(FileType.FILES) {
-                if (it.name.endsWith('.p12')) { pkcs12List << it.absolutePath }
+                if (it.name.endsWith('.p12')) {
+                    pkcs12List << it.absolutePath
+                }
             }
             println "NOTICE: You have not provided a PKCS12 file."
             if (pkcs12List.empty) {
@@ -90,7 +92,7 @@ class CliMain {
             println "${context.baseUrl}${location}"
             if (!context.dry) {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
-                restClient.get(path: decodedUrl){ HttpResponseDecorator response, json ->
+                restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
                     assert response.status == 200
                     if (json.valid != 'true') {
                         println "${it.name} er ugyldig med teksterne\n  ${json.data?.beskeder?.join("\n  ")}"
@@ -100,14 +102,14 @@ class CliMain {
         }
     }
 
-    RESTClient getRestClient(){
+    RESTClient getRestClient() {
         RESTClient client = new RESTClient(context.baseUrl)
         if (context.p12) {
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(), '')
         }
         client.handler.failure = { HttpResponseDecorator resp, data ->
             String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
-            throw new RuntimeException("\nHTTP Status code:${resp.status}\n"+
+            throw new RuntimeException("\nHTTP Status code:${resp.status}\n" +
                     "$headers\nBody:\n${prettyPrint(toJson(data))}")
         }
         return client
