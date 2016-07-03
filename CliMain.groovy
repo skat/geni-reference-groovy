@@ -56,7 +56,7 @@ class CliMain {
             }
             println "NOTICE: You have not provided a PKCS12 file."
             if (pkcs12List.empty) {
-                println "NOTICE: And you don't seem to have any OCES keys installed (in '${System.getProperty('user.home')}/.oces')"
+                println "NOTICE: You don't seem to have any OCES keys installed (in '${System.getProperty('user.home')}/.oces')"
             } else {
                 println "NOTICE: You have the following OCES keys installed\n${pkcs12List.collect { "NOTICE:     ${it}" }.join("\n")}"
             }
@@ -74,6 +74,7 @@ class CliMain {
 
     def run() {
         def url = "/${context.domain}/pligtige/${context.se}/perioder/${context.period}/konti/"
+        RESTClient restClient = createRestClient()
         new File(context.directory).eachFile {
             println "POST ${context.domain}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
             def location
@@ -102,15 +103,18 @@ class CliMain {
         }
     }
 
-    RESTClient getRestClient() {
+    RESTClient createRestClient() {
         RESTClient client = new RESTClient(context.baseUrl)
         if (context.p12) {
-            client.auth.certificate(new File(context.p12).toURI().toURL().toString(), '')
+            Console console = System.console();
+            client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
+                    console.readPassword("Enter certificate passphrase: ") as String)
         }
         client.handler.failure = { HttpResponseDecorator resp, data ->
             String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
             throw new RuntimeException("\nHTTP Status code:${resp.status}\n" +
-                    "$headers\nBody:\n${prettyPrint(toJson(data))}")
+                    "$headers\n" +
+                    "Body:\n${prettyPrint(toJson(data))}")
         }
         return client
     }
