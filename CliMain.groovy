@@ -11,7 +11,7 @@ import static groovy.json.JsonOutput.toJson
 
 class CliMain {
     public static final validDomains = ['udlån', 'indlån', 'prioritetslån', 'pantebrev']
-    public static final String defaultBaseUrl = 'https://api.geni.skat.dk'
+    public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
     OptionAccessor options
     LinkedHashMap context = [:]
 
