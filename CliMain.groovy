@@ -95,8 +95,9 @@ class CliMain {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
                 restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
                     assert response.status == 200
-                    if (json.valid != 'true') {
-                        println "${it.name} er ugyldig med teksterne\n  ${json.data?.beskeder?.join("\n  ")}"
+                    println("Status på indleveringen er: ${json.data.attributes.status}")
+                    if (json.data.status != 'SCHEMA_VALID') {
+                        println "${it.name} er ugyldig med teksterne\n  ${json.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
             }
