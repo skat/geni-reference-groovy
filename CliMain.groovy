@@ -1,7 +1,9 @@
 @Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.1')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
+@Grab('org.codehaus.groovy:groovy-json:2.4.6')
 import groovy.io.FileType
+import groovy.json.JsonSlurper
 import groovyx.net.http.ContentType
 import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.RESTClient
@@ -82,7 +84,7 @@ class CliMain {
             if (!context.dry) {
                 restClient.post(
                         path: "${url}${it.name[0..-5]}/indleveringer",
-                        requestContentType: ContentType.XML,
+                        requestContentType: ContentType.BINARY,
                         body: it.bytes
                 ) { response, json ->
                     assert response.status == 201
@@ -95,9 +97,11 @@ class CliMain {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
                 restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
                     assert response.status == 200
-                    println("Status på indleveringen er: ${json.data.attributes.status}")
-                    if (json.data.status != 'SCHEMA_VALID') {
-                        println "${it.name} er ugyldig med teksterne\n  ${json.data?.attributes?.beskeder?.join("\n  ")}"
+                    String text = json.text
+                    def slurper = new JsonSlurper().parseText(text)
+                    println("Status på indleveringen er: ${slurper.data.attributes.status}")
+                    if (slurper.data.status != 'SCHEMA_VALID') {
+                        println "${it.name} Er ugyldig med teksterne\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
             }
@@ -109,7 +113,8 @@ class CliMain {
         if (context.p12) {
             Console console = System.console();
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
-                    console.readPassword("Enter certificate passphrase: ") as String)
+                    "Test1234")
+//                    console.readPassword("Enter certificate passphrase: ") as String)
         }
         client.handler.failure = { HttpResponseDecorator resp, data ->
             String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
