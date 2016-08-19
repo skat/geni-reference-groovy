@@ -100,7 +100,8 @@ class CliMain {
                     String text = json.text
                     def slurper = new JsonSlurper().parseText(text)
                     println("Status på indleveringen er: ${slurper.data.attributes.status}")
-                    if (slurper.data.status != 'SCHEMA_VALID') {
+
+                    if (slurper.data.attributes.status != 'VALID') {
                         println "${it.name} Er ugyldig med teksterne\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
@@ -113,8 +114,7 @@ class CliMain {
         if (context.p12) {
             Console console = System.console();
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
-                    "Test1234")
-//                    console.readPassword("Enter certificate passphrase: ") as String)
+                    console.readPassword("Enter certificate passphrase: ") as String)
         }
         client.handler.failure = { HttpResponseDecorator resp, data ->
             String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
