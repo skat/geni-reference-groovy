@@ -1,4 +1,4 @@
-@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.1')
+@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
 @Grab('org.codehaus.groovy:groovy-json:2.4.6')
