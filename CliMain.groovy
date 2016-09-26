@@ -13,6 +13,11 @@ import static groovy.json.JsonOutput.toJson
 
 class CliMain {
     public static final validCategories = ['udlån', 'indlån', 'prioritetslån', 'pantebreve']
+    public static final Map validCategoryAlias = [
+            'ud'       : 'udlån',
+            'ind'      : 'indlån',
+            'prioritet': 'prioritetslån',
+            'pant'     : 'pantebreve']
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
     OptionAccessor options
     LinkedHashMap context = [:]
@@ -41,8 +46,9 @@ class CliMain {
             throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
         }
 
-        if (!validCategories.contains(options.category)) {
-            throw new IllegalArgumentException("Category cannot be '$options.category'. Must be one of '${validCategories.join("', '")}'.")
+        if (!validCategories.contains(options.category) && !validCategoryAlias.containsKey(options.category)) {
+            throw new IllegalArgumentException("Category cannot be '$options.category'.\n"+
+                    "Must be one of '${(validCategories + validCategoryAlias.keySet()).join("', '")}'.")
         }
 
         if (!(options.period =~ /^[0-9]{4}(-[0-9]{2})?$/)) {
@@ -67,7 +73,7 @@ class CliMain {
 
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
-        context.category = options.category
+        context.category = validCategoryAlias.containsKey(options.category) ? validCategoryAlias[options.category] : options.category
         context.se = options.se
         context.period = options.period
         context.p12 = options.p12
