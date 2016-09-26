@@ -86,10 +86,10 @@ class CliMain {
         new File(context.directory).eachFile {
             println "POST ${context.category}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
             def location
-            println("${url}${it.name[0..-5]}/indleveringer")
             if (!context.dry) {
+                String completeUrl = "${url}${it.name[0..-5]}/indleveringer".toString()
                 restClient.post(
-                        path: "${url}${it.name[0..-5]}/indleveringer",
+                        path: completeUrl,
                         requestContentType: ContentType.BINARY,
                         body: it.bytes
                 ) { response, json ->
@@ -98,7 +98,6 @@ class CliMain {
                     location = response.headers.location
                 }
             }
-            println "${context.baseUrl}${location}"
             if (!context.dry) {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
                 restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
@@ -108,7 +107,7 @@ class CliMain {
                     println("Status på indleveringen er: ${slurper.data.attributes.status}")
 
                     if (slurper.data.attributes.status != 'VALID') {
-                        println "${it.name} Er ugyldig med teksterne\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
+                        println "Filen '${it.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
             }
@@ -118,15 +117,17 @@ class CliMain {
     RESTClient createRestClient() {
         RESTClient client = new RESTClient(context.baseUrl)
         if (context.p12) {
-            Console console = System.console();
+            Console console = System.console()
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
                     console?.readPassword("Enter certificate passphrase: ")?:'' as String)
         }
         client.handler.failure = { HttpResponseDecorator resp, data ->
             String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
-            throw new RuntimeException("\nHTTP Status code:${resp.status}\n" +
-                    "$headers\n" +
-                    "Body:\n${prettyPrint(toJson(data))}")
+            println """
+HTTP Status code: ${resp.status}
+$headers
+Body:
+${prettyPrint(toJson(data))}"""
         }
         return client
     }
