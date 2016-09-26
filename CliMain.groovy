@@ -12,7 +12,7 @@ import static groovy.json.JsonOutput.prettyPrint
 import static groovy.json.JsonOutput.toJson
 
 class CliMain {
-    public static final validDomains = ['udlån', 'indlån', 'prioritetslån', 'pantebreve']
+    public static final validCategories = ['udlån', 'indlån', 'prioritetslån', 'pantebreve']
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
     OptionAccessor options
     LinkedHashMap context = [:]
@@ -24,7 +24,7 @@ class CliMain {
             h longOpt: 'help', 'Usage information'
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
-            d longOpt: 'domain', args: 1, 'Reporting domain. e.g. "udlån"', required: true
+            c longOpt: 'category', args: 1, 'Reporting category. e.g. "udlån"', required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
@@ -41,8 +41,8 @@ class CliMain {
             throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
         }
 
-        if (!validDomains.contains(options.domain)) {
-            throw new IllegalArgumentException("Domain cannot be '$options.domain'. Must be one of '${validDomains.join("', '")}'.")
+        if (!validCategories.contains(options.category)) {
+            throw new IllegalArgumentException("Category cannot be '$options.category'. Must be one of '${validCategories.join("', '")}'.")
         }
 
         if (!(options.period =~ /^[0-9]{4}(-[0-9]{2})?$/)) {
@@ -67,7 +67,7 @@ class CliMain {
 
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
-        context.domain = options.domain
+        context.category = options.category
         context.se = options.se
         context.period = options.period
         context.p12 = options.p12
@@ -75,10 +75,10 @@ class CliMain {
     }
 
     def run() {
-        def url = "/${context.domain}/pligtige/${context.se}/perioder/${context.period}/konti/"
+        def url = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         RESTClient restClient = createRestClient()
         new File(context.directory).eachFile {
-            println "POST ${context.domain}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
+            println "POST ${context.category}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
             def location
             println("${url}${it.name[0..-5]}/indleveringer")
             if (!context.dry) {
