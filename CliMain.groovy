@@ -110,7 +110,7 @@ class CliMain {
                     def slurper = new JsonSlurper().parseText(json.text)
                     println "Status på indleveringen er: ${slurper.data.attributes.status}"
 
-                    if (slurper.data.attributes.status != 'VALID') {
+                    if (slurper.data.attributes.status != 'VALID' && context.verbose) {
                         println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
