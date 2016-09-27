@@ -20,25 +20,27 @@ class CliMain {
             'pant'     : 'pantebreve']
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
     OptionAccessor options
-    LinkedHashMap context = [:]
+    Map context = [:]
 
     CliMain(args) {
         CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>',
                 header: 'Options:')
         cli.with {
-            h longOpt: 'help', 'Usage information'
+            h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
             c longOpt: 'category', args: 1, "Reporting category. e.g. one of '${validCategories.join("', '")}' or '${validCategoryAlias.keySet().join("', '")}'", required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
+            v longOpt: 'verbose', 'Verbose error messages'
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
         }
         options = cli.parse(args)
         if (!options) {
             throw new IllegalArgumentException()
         }
-        if (options.help) {
+        if (options.h) {
+            cli.usage()
             throw new IllegalArgumentException()
         }
         if (options.arguments().size != 1) {
@@ -77,37 +79,39 @@ class CliMain {
         context.se = options.se
         context.period = options.period
         context.p12 = options.p12
+        context.verbose = options.v
         context.directory = options.arguments()[0]
     }
 
     def run() {
         def url = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
+        println "Indberetter filerne i '${context.directory}' til baseurl '$url'"
         RESTClient restClient = createRestClient()
-        new File(context.directory).eachFile {
-            println "POST ${context.category}${url}${it.name[0..-5]}/indleveringer content of ${it.name}"
+        new File(context.directory).eachFile { File file ->
+            println ""
+            String completeUrl = "${url}${file.name[0..-5]}/indleveringer".toString()
+            if (context.verbose) println "POST indhold af '${file.name}' til ${completeUrl}"
             def location
             if (!context.dry) {
-                String completeUrl = "${url}${it.name[0..-5]}/indleveringer".toString()
                 restClient.post(
                         path: completeUrl,
                         requestContentType: ContentType.BINARY,
-                        body: it.bytes
+                        body: file.bytes
                 ) { response, json ->
                     assert response.status == 201
-                    println "Indlevering af '${it.name}' fejlede med status kode ${response.statusLine}"
+                    println "Indlevering af '${file.name}' returnerede status kode ${response.statusLine}"
                     location = response.headers.location
                 }
             }
-            if (!context.dry) {
+            if (!context.dry && location) {
                 String decodedUrl = URLDecoder.decode(location, 'UTF-8')
                 restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
                     assert response.status == 200
-                    String text = json.text
-                    def slurper = new JsonSlurper().parseText(text)
-                    println("Status på indleveringen er: ${slurper.data.attributes.status}")
+                    def slurper = new JsonSlurper().parseText(json.text)
+                    println "Status på indleveringen er: ${slurper.data.attributes.status}"
 
                     if (slurper.data.attributes.status != 'VALID') {
-                        println "Filen '${it.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
+                        println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
                     }
                 }
             }
@@ -121,13 +125,19 @@ class CliMain {
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
                     console?.readPassword("Enter certificate passphrase: ")?:'' as String)
         }
+        // Fejlhåndtering
         client.handler.failure = { HttpResponseDecorator resp, data ->
-            String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
-            println """
+            if (context.verbose) {
+                String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
+                println """Indleveringen fejlede! Detaljeret svar fra serveren:
 HTTP Status code: ${resp.status}
+Headers:
 $headers
 Body:
 ${prettyPrint(toJson(data))}"""
+            } else {
+                println "Indleveringen fejlede! Serveren svarede: $resp.statusLine"
+            }
         }
         return client
     }
