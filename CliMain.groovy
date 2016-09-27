@@ -89,7 +89,7 @@ class CliMain {
         RESTClient restClient = createRestClient()
         new File(context.directory).eachFile { File file ->
             println ""
-            String completeUrl = "${url}${file.name[0..-5]}/indleveringer".toString()
+            String completeUrl = "${url}${file.name}/indleveringer".toString()
             if (context.verbose) println "POST indhold af '${file.name}' til ${completeUrl}"
             def location
             if (!context.dry) {
