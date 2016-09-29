@@ -2,12 +2,14 @@
 import java.util.logging.Level
 import java.util.logging.Logger
 
-CliMain indlever
 try {
-    Logger.getLogger('').setLevel(Level.OFF) //top logger
-    indlever = new CliMain(args)
-} catch (IllegalArgumentException e) {
+    Logger.getLogger('').setLevel(Level.OFF) //stands top logger
+    Map context = CliHelper.parseOptions(args)
+    new CliMain(context: context).run()
+} catch (Exception e) {
     println e.message ?: ''
     System.exit 1
 }
-indlever.run()
+
+
+
