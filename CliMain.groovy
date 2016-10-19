@@ -56,7 +56,7 @@ class CliMain {
         if (context.p12) {
             Console console = System.console()
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
-                    console?.readPassword("Enter certificate passphrase: ") ?: '' as String)
+                                    (console?.readPassword("Enter certificate passphrase: ")?:'') as String)
         }
         // Fejlhåndtering
         client.handler.failure = { HttpResponseDecorator resp, data ->
