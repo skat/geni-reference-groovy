@@ -52,8 +52,8 @@ class CliHelper {
                     "Must be one of '${(validCategories + validCategoryAlias.keySet()).join("', '")}'.")
         }
 
-        if (!(options.period =~ /^[0-9]{4}(-[0-9]{2})?$/)) {
-            throw new IllegalArgumentException("Period shall be either a four digit a year ('2017') or year followed by month ('2017-03').")
+        if (!(options.period =~ /^[0-9]{4}(-0[369])?$/)) {
+            throw new IllegalArgumentException("Period shall be either a four digit a year ('2017') or year followed by month (03, 06, or 09) . e.g. '2017-03'.")
         }
 
         if (!options.p12) {
