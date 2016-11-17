@@ -13,6 +13,7 @@ import static groovy.json.JsonOutput.toJson
 class CliMain {
 
     Map context = [:]
+    static final int KONTOID_MAX_LENGTH = 30;
 
     void run() {
         def url = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
@@ -22,29 +23,34 @@ class CliMain {
         dir.eachFile { File file ->
             println ""
             String completeUrl = "${url}${file.name}/indleveringer".toString()
-            if (context.verbose) println "POST indhold af '${file.name}' til ${completeUrl}"
-            def location
-            if (!context.dry) {
-                // POST indlevering
-                restClient.post(
-                        path: completeUrl,
-                        requestContentType: ContentType.BINARY,
-                        body: file.bytes
-                ) { response, json ->
-                    assert response.status == 201
-                    println "Indlevering af '${file.name}' returnerede HTTP status ${response.statusLine}"
-                    location = response.headers.location
-                }
+            if(KONTOID_MAX_LENGTH > 0 && file.name.size() > KONTOID_MAX_LENGTH){
+                println "Filnavn '${file.name}' er for langt, idet det bruges som KontoID. Max længde ${KONTOID_MAX_LENGTH}"
             }
-            if (!context.dry && location) {
-                // GET status på indlevering
-                String decodedUrl = URLDecoder.decode(location, 'UTF-8')
-                restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
-                    assert response.status == 200
-                    def slurper = new JsonSlurper().parseText(json.text)
-                    println "Status på indleveringen er: ${slurper.data.attributes.status}"
-                    if (slurper.data.attributes.status != 'VALID' && context.verbose) {
-                        println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
+            else {
+                if (context.verbose) println "POST indhold af '${file.name}' til ${completeUrl}"
+                def location
+                if (!context.dry) {
+                    // POST indlevering
+                    restClient.post(
+                            path: completeUrl,
+                            requestContentType: ContentType.BINARY,
+                            body: file.bytes
+                    ) { response, json ->
+                        assert response.status == 201
+                        println "Indlevering af '${file.name}' returnerede HTTP status ${response.statusLine}"
+                        location = response.headers.location
+                    }
+                }
+                if (!context.dry && location) {
+                    // GET status på indlevering
+                    String decodedUrl = URLDecoder.decode(location, 'UTF-8')
+                    restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
+                        assert response.status == 200
+                        def slurper = new JsonSlurper().parseText(json.text)
+                        println "Status på indleveringen er: ${slurper.data.attributes.status}"
+                        if (slurper.data.attributes.status != 'VALID' && context.verbose) {
+                            println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
+                        }
                     }
                 }
             }
