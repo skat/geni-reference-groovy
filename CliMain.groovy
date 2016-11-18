@@ -89,7 +89,7 @@ class CliMain {
             }
             if (context.verbose) println "Download svarfil '${context.s3OutUrl}$s3Url' returnerede HTTP status '${status}'"
             assert status == '200'
-            println "Masseindlevering gennemført"
+            println "Masseindlevering gennemført. Svarfil '${context.s3OutUrl}$s3Url'"
         }
     }
 
