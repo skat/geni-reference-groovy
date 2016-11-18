@@ -18,16 +18,23 @@ class CliHelper {
             'prioritet': 'prioritetsl\u00e5n',
             'pant'     : 'pantebreve']
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
-
+    public static final String defaultS3InUrl = 'https://in.s3.tfe.tse3pindberet.skat.dk'
+    public static final String defaultS3OutUrl = 'https://out.s3.tfe.tse3pindberet.skat.dk'
+    public static final int defaultKontoIdLength = 30
 
     static Map parseOptions(args) {
         OptionAccessor options
-        CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>',
+        CliBuilder cli = new CliBuilder(usage: '\n\tindlever [options] <directory>\n\tindlever -m [options] <file>',
                 header: 'Options:')
         cli.with {
+            m longOpt: 'masseindlevering', 'Submit multiple reports at once in a zip file', required: false
             h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
+            k longOpt: 'konto-id-length', args: 1, "Max length of KontoId. Default is $defaultKontoIdLength. Disabled if 0"
+            o longOpt: 'output', args: 1, "(only masseindlevering) output file, e.g. out.zip"
+            u longOpt: 's3-in-url', args: 1, "(only masseindlevering) S3 upload url, e.g. $defaultS3InUrl"
+            d longOpt: 's3-out-url', args: 1, "(only masseindlevering) S3 download url, e.g. $defaultS3InUrl"
             c longOpt: 'category', args: 1, "Reporting category. e.g. one of '${validCategories.join("', '")}' or '${validCategoryAlias.keySet().join("', '")}'", required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
@@ -44,7 +51,7 @@ class CliHelper {
         }
         if (options.arguments().size != 1) {
             cli.usage()
-            throw new IllegalArgumentException("You must provide exactly one directory, not ${options.arguments().size}.")
+            throw new IllegalArgumentException("You must provide exactly one directory or file, not ${options.arguments().size}.")
         }
 
         if (!validCategories.contains(options.category) && !validCategoryAlias.containsKey(options.category)) {
@@ -75,12 +82,22 @@ class CliHelper {
         Map context = [:]
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
+        context.s3InUrl = options.'s3-in-url' ?: defaultS3InUrl
+        context.s3OutUrl = options.'s3-out-url' ?: defaultS3OutUrl
+        context.kontoIdLength = options.'k' ?: defaultKontoIdLength
         context.category = validCategoryAlias.containsKey(options.category) ? validCategoryAlias[options.category] : options.category
         context.se = options.se
         context.period = options.period
         context.p12 = options.p12
         context.verbose = options.v
-        context.directory = options.arguments()[0]
+        context.masseindlevering = options.m
+        if(context.masseindlevering){
+            context.file = options.arguments()[0]
+            context.output = options.output
+        }
+        else {
+            context.directory = options.arguments()[0]
+        }
         return context
     }
 
