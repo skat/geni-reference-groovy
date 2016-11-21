@@ -60,9 +60,11 @@ class CliMain {
                 if (context.verbose) println "Aktivering af '${context.s3InUrl}$s3Url' returnerede HTTP status ${response.statusLine}"
                 assert response.status == 201
                 location = response.headers.location
-                def slurper = new JsonSlurper().parseText(json.text)
+                String jsontxt = json.text
+                def slurper = new JsonSlurper().parseText(jsontxt)
                 println "Status på masseindleveringen er: ${slurper.data.attributes.status}"
                 svarfil = slurper.data.links.svarfil
+                if (context.verbose) println "Svar på aktivering: ${jsontxt}"
             }
         }
 
