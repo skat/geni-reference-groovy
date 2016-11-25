@@ -18,23 +18,24 @@ class CliMain {
     Map context = [:]
 
     void masseindlevering() {
-        File file = new File(context.file)
-        String s3Url = "/${context.category}/pligtige/${context.se}/${file.name}"
-        String apiUrl = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/masseindleveringer/"
+        printlnVerbose "config: ${context.toMapString()}"
+        File indleveringsfil = new File(context.file)
+        String s3Path = "/${context.category}/pligtige/${context.se}/${indleveringsfil.name}"
+        String apiPath = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/masseindleveringer/"
 
-        if (context.verbose) println "Uploader '${file.name}' til url '${context.s3InUrl}$s3Url'"
+        printlnVerbose "Uploader '${indleveringsfil.name}' til url '${context.s3InUrl}$s3Path'"
         String location
         String md5
-        String svarfil
+        String urlTilSvarfil
         if (!context.dry) {
             RESTClient restClient = createRestClient(context.s3InUrl)
             def response = restClient.put(
-                    path: s3Url,
+                    path: s3Path,
                     requestContentType: ContentType.BINARY,
-                    body: file.bytes
+                    body: indleveringsfil.bytes
             )
 
-            if (context.verbose) println "Upload af '${file.name}' returnerede HTTP status ${response.statusLine}"
+            printlnVerbose "Upload af '${indleveringsfil.name}' returnerede HTTP status ${response.statusLine}"
             assert response.status == 200
             location = response.headers.location
             md5 = response.headers.'Content-MD5'
@@ -44,71 +45,69 @@ class CliMain {
         JsonBuilder requestJson = new JsonBuilder()
         requestJson.data {
             attributes {
-                s3Key "${context.s3InUrl}$s3Url"
+                s3Key "${context.s3InUrl}$s3Path"
                 s3Md5Checksum md5
             }
         }
 
-        if (context.verbose) println "Aktiverer masseindlevering '${context.s3InUrl}$s3Url' på url '${context.baseUrl}$apiUrl'"
+        printlnVerbose "Aktiverer masseindlevering '${context.s3InUrl}$s3Path' på url '${context.baseUrl}$apiPath'"
         if (!context.dry && location) {
             RESTClient restClient = createRestClient(context.baseUrl)
             restClient.post(
-                    path: apiUrl,
+                    path: apiPath,
                     requestContentType: 'application/json',
                     body: requestJson.toString()
             ) { response, json ->
-                if (context.verbose) println "Aktivering af '${context.s3InUrl}$s3Url' returnerede HTTP status ${response.statusLine}"
+                printlnVerbose "Aktivering af '${context.s3InUrl}$s3Path' returnerede HTTP status ${response.statusLine}"
                 assert response.status == 201
                 location = response.headers.location
                 String jsontxt = json.text
                 def slurper = new JsonSlurper().parseText(jsontxt)
                 println "Status på masseindleveringen er: ${slurper.data.attributes.status}"
-                svarfil = slurper.data.links.svarfil
-                if (context.verbose) println "Svar på aktivering: ${jsontxt}"
+                urlTilSvarfil = slurper.data.links.svarfil
+                printlnVerbose "Svar på aktivering: ${jsontxt}"
             }
         }
 
-        if (context.verbose) println "Henter svarfil fra url '${context.s3OutUrl}$s3Url'"
-        if (!context.dry && svarfil) {
+        printlnVerbose "Henter urlTilSvarfil fra url '${context.s3OutUrl}$s3Path'"
+        if (!context.dry && urlTilSvarfil) {
             String status
             InputStream stream
             String output = context.output
             HTTPBuilder http = new HTTPBuilder(context.s3OutUrl)
-            http.request(Method.GET, ContentType.BINARY) {req ->
-                uri.path = s3Url
-                response.'200' = {resp, binary ->
+            http.request(Method.GET, ContentType.BINARY) { req ->
+                uri.path = s3Path
+                response.'200' = { resp, binary ->
                     status = resp.status
                     stream = binary
-                    if(output){
+                    if (output) {
                         File outfile = new File(output)
                         outfile.delete()
                         outfile << stream
                     }
                 }
-                response.failure = {resp ->
+                response.failure = { resp ->
                     status = resp.status
                 }
             }
-            if (context.verbose) println "Download svarfil '${context.s3OutUrl}$s3Url' returnerede HTTP status '${status}'"
+            printlnVerbose "Download urlTilSvarfil '${context.s3OutUrl}$s3Path' returnerede HTTP status '${status}'"
             assert status == '200'
-            println "Masseindlevering gennemført. Svarfil '${context.s3OutUrl}$s3Url'"
+            println "Masseindlevering gennemført. Svarfil '${context.s3OutUrl}$s3Path' blev gemt lokalt her: ${context.output}"
         }
     }
 
-
     void enkeltindlevering() {
-        def url = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
+        printlnVerbose "config: ${context.toMapString()}"
+        def path = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         def dir = new File(context.directory)
-        println "Indberetter ${dir.fileCount} filer i '${context.directory}' til baseurl '$url'"
+        println "Indberetter ${dir.fileCount} filer i '${context.directory}' til baseurl '$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         dir.eachFile { File file ->
-            println ""
-            String completeUrl = "${url}${file.name}/indleveringer".toString()
-            if(context.kontoidlength > 0 && file.name.size() > context.kontoidlength){
+            String completeUrl = "${path}${file.name}/indleveringer".toString()
+            if (context.kontoidlength > 0 && file.name.size() > context.kontoidlength) {
                 println "KontoID er for langt, eller filnavn '${file.name}' svarer ikke til KontoID. Max længde ${context.kontoidlength}"
-            }
-            else {
-                if (context.verbose) println "POST indhold af '${file.name}' til ${completeUrl}"
+            } else {
+                printlnVerbose "POST indhold af '${file.name}' til ${completeUrl}"
                 def location
                 if (!context.dry) {
                     // POST indlevering
@@ -161,4 +160,9 @@ ${prettyPrint(toJson(data))}"""
         }
         return client
     }
+
+    void printlnVerbose(String tekst){
+        if(context.verbose)println(tekst)
+    }
 }
+
