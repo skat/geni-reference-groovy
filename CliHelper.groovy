@@ -78,8 +78,6 @@ class CliHelper {
         Map context = [:]
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
-        context.s3InUrl = replaceHost(context, 'in.s3')
-        context.s3OutUrl = replaceHost(context, 'out.s3')
         context.kontoIdLength = options.'k' ?: defaultKontoIdLength
         context.category = validCategoryAlias.containsKey(options.category) ? validCategoryAlias[options.category] : options.category
         context.se = options.se
@@ -87,20 +85,17 @@ class CliHelper {
         context.p12 = options.p12
         context.verbose = options.v
         context.masseindlevering = options.m
-        if(context.masseindlevering){
-            context.file = options.arguments()[0]
+        if (context.masseindlevering) {
+            context.s3InUrl = replaceHost(context, 'in.s3')
+            context.s3OutUrl = replaceHost(context, 'out.s3')
             context.output = options.output
         }
-        else {
-            context.directory = options.arguments()[0]
-        }
+        context.directory = options.arguments()[0]
         return context
     }
 
     protected static String replaceHost(Map context, String replacement) {
-        return context.baseUrl.replaceAll('^(https?://)api') { match, protocolPart ->
-            return "${protocolPart}${replacement}"
-        }
+        return context.baseUrl.replaceAll('^(https?://)api', "\$1$replacement")
     }
 
 }
