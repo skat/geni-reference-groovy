@@ -152,8 +152,9 @@ class CliMain {
         RESTClient client = new RESTClient(baseUrl)
         if (context.p12) {
             Console console = System.console()
+            String password = context.certificatePassword ?: (console?.readPassword("Enter certificate passphrase: ") ?: '')
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
-                    (console?.readPassword("Enter certificate passphrase: ") ?: '') as String)
+                    (password) as String)
         }
         // Fejlhåndtering
         client.handler.failure = { HttpResponseDecorator resp, data ->

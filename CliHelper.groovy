@@ -36,6 +36,7 @@ class CliHelper {
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             v longOpt: 'verbose', 'Verbose error messages'
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
+            _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key file'
         }
         options = cli.parse(args)
         if (!options) {
@@ -85,6 +86,7 @@ class CliHelper {
         context.p12 = options.p12
         context.verbose = options.v
         context.masseindlevering = options.m
+        context.certificatePassword = options.'p12-password'
         if (context.masseindlevering) {
             context.s3InUrl = replaceHost(context, 'in.s3')
             context.s3OutUrl = replaceHost(context, 'out.s3')
