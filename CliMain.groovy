@@ -170,6 +170,10 @@ ${prettyPrint(toJson(data))}"""
                 println "Indleveringen fejlede med HTTP status: $resp.statusLine"
             }
         }
+        (context.extraHeaders as List).each { String headerString ->
+            String[] tokenizedHeader = headerString.split('=')
+            client.defaultRequestHeaders."${tokenizedHeader[0]}" = tokenizedHeader[1]
+        }
         return client
     }
 
@@ -187,7 +191,7 @@ ${prettyPrint(toJson(data))}"""
         String outputDirPath = createOutputDir(inputDir)
         String generatedZipPath = "$outputDirPath/${zipFileName}"
         ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(generatedZipPath))
-        findAllExceptHiddenAndDirectories(inputDir).each{ file ->
+        findAllExceptHiddenAndDirectories(inputDir).each { file ->
             zipOutputStream.putNextEntry(new ZipEntry(file.name))
             file.withInputStream { InputStream inputStream ->
                 Files.copy(inputStream, zipOutputStream)

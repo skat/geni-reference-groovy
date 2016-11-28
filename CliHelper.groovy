@@ -37,6 +37,7 @@ class CliHelper {
             v longOpt: 'verbose', 'Verbose error messages'
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
             _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key file'
+            _ longOpt: 'header', args: 1, 'Headers eg. "content-type=application/pdf"'
         }
         options = cli.parse(args)
         if (!options) {
@@ -59,7 +60,14 @@ class CliHelper {
         if (!(options.period =~ /^[0-9]{4}(-0[369])?$/)) {
             throw new IllegalArgumentException("Period shall be either a four digit a year ('2017') or year followed by month (03, 06, or 09) . e.g. '2017-03'.")
         }
-
+        if (options.header) {
+            List<String> headers = options.headers
+            if(!headers.every {
+                it ==~/.*=.*/
+            }){
+                throw new IllegalArgumentException('The header must have the following format: "headerName=headerValue"')
+            }
+        }
         if (!options.p12) {
             def pkcs12List = []
             new File("${System.getProperty('user.home')}/.oces").eachFile(FileType.FILES) {
@@ -93,6 +101,7 @@ class CliHelper {
             context.output = options.output
         }
         context.directory = options.arguments()[0]
+        context.extraHeaders = options.headers
         return context
     }
 
