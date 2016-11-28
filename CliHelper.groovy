@@ -18,7 +18,6 @@ class CliHelper {
             'prioritet': 'prioritetsl\u00e5n',
             'pant'     : 'pantebreve']
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
-    public static final int defaultKontoIdLength = 30
 
     static Map parseOptions(args) {
         OptionAccessor options
@@ -29,7 +28,6 @@ class CliHelper {
             h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
-            k longOpt: 'konto-id-length', args: 1, "Max length of KontoId. Default is $defaultKontoIdLength. Disabled if 0"
             o longOpt: 'output', args: 1, "(only masseindlevering) output file, e.g. out.zip"
             c longOpt: 'category', args: 1, "Reporting category. e.g. one of '${validCategories.join("', '")}' or '${validCategoryAlias.keySet().join("', '")}'", required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
@@ -79,7 +77,6 @@ class CliHelper {
         Map context = [:]
         context.dry = options.'dry-run'
         context.baseUrl = options.'base-url' ?: defaultBaseUrl
-        context.kontoIdLength = options.'k' ?: defaultKontoIdLength
         context.category = validCategoryAlias.containsKey(options.category) ? validCategoryAlias[options.category] : options.category
         context.se = options.se
         context.period = options.period

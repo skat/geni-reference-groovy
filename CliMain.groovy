@@ -19,6 +19,8 @@ import static groovy.json.JsonOutput.toJson
 
 class CliMain {
 
+    static final MAX_KONTO_ID_LENGTH = 30
+
     Map context = [:]
 
     void masseindlevering() {
@@ -115,8 +117,8 @@ class CliMain {
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
             String completeUrl = "${path}${file.name}/indleveringer".toString()
-            if (context.kontoidlength > 0 && file.name.size() > context.kontoidlength) {
-                println "KontoID er for langt, eller filnavn '${file.name}' svarer ikke til KontoID. Max længde ${context.kontoidlength}"
+            if (file.name.size() > MAX_KONTO_ID_LENGTH) {
+                println "KontoID '${file.name}' er for langt. Max længde ${MAX_KONTO_ID_LENGTH}"
             } else {
                 printlnVerbose "POST indhold af '${file.name}' til ${completeUrl}"
                 def location
