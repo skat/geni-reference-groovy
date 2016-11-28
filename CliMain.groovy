@@ -151,8 +151,7 @@ class CliMain {
     RESTClient createRestClient(String baseUrl) {
         RESTClient client = new RESTClient(baseUrl)
         if (context.p12) {
-            Console console = System.console()
-            String password = context.certificatePassword ?: (console?.readPassword("Enter certificate passphrase: ") ?: '')
+            String password = findCertificatePassword()
             client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
                     (password) as String)
         }
@@ -177,6 +176,15 @@ ${prettyPrint(toJson(data))}"""
             }
         }
         return client
+    }
+
+    protected String findCertificatePassword() {
+        Console console = System.console()
+        String password = context.certificatePassword ?: null
+        if (!password) {
+            password = console?.readPassword("Enter certificate passphrase: ").toString()
+        }
+        return password
     }
 
     void printlnVerbose(String tekst) {

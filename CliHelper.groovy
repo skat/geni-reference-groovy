@@ -94,7 +94,7 @@ class CliHelper {
         context.p12 = options.p12
         context.verbose = options.v
         context.masseindlevering = options.m
-        context.certificatePassword = options.'p12-password'
+        context.certificatePassword = options.'p12-password' == 'false' ? null : options.'p12-password'
         if (context.masseindlevering) {
             context.s3InUrl = replaceHost(context, 'in.s3')
             context.s3OutUrl = replaceHost(context, 'out.s3')
