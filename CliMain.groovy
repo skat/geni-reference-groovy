@@ -170,9 +170,11 @@ ${prettyPrint(toJson(data))}"""
                 println "Indleveringen fejlede med HTTP status: $resp.statusLine"
             }
         }
-        (context.extraHeaders as List).each { String headerString ->
-            String[] tokenizedHeader = headerString.split('=')
-            client.defaultRequestHeaders."${tokenizedHeader[0]}" = tokenizedHeader[1]
+        if (context.extraHeaders) {
+            (context.extraHeaders as List).each { String headerString ->
+                String[] tokenizedHeader = headerString.split('=')
+                client.defaultRequestHeaders."${tokenizedHeader[0]}" = tokenizedHeader[1]
+            }
         }
         return client
     }

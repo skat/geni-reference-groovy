@@ -12,7 +12,7 @@ try {
         new CliMain(context: context).enkeltindlevering()
     }
 } catch (Exception e) {
-    println e.message ?: ''
+    e.printStackTrace()
     System.exit 1
 }
 
