@@ -5,14 +5,16 @@ import java.util.logging.Logger
 try {
     Logger.getLogger('').setLevel(Level.OFF) //stands top logger
     Map context = CliHelper.parseOptions(args)
-    if(context.masseindlevering){
-        new CliMain(context: context).masseindlevering()
+    try {
+        new CliMain(context: context).with {
+            context.masseindlevering ? masseindlevering() : enkeltindlevering()
+        }
+    } catch (Exception e) {
+        e.printStackTrace()
+        System.exit 1
     }
-    else {
-        new CliMain(context: context).enkeltindlevering()
-    }
-} catch (Exception e) {
-    e.printStackTrace()
+} catch (IllegalArgumentException e) {
+    println e.message ?: ''
     System.exit 1
 }
 
