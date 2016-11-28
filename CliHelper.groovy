@@ -87,7 +87,7 @@ class CliHelper {
         if (context.masseindlevering) {
             context.s3InUrl = replaceHost(context, 'in.s3')
             context.s3OutUrl = replaceHost(context, 'out.s3')
-            context.output = options.output
+            context.output = options.output ?: File.createTempFile('svarfil', '.zip', new File(System.getProperty('user.dir'))).getAbsolutePath()
         }
         context.directory = options.arguments()[0]
         if(options.header){

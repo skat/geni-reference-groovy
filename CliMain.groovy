@@ -5,14 +5,14 @@ import groovy.json.JsonBuilder
 @Grab('org.codehaus.groovy:groovy-json:2.4.6')
 import groovy.json.JsonSlurper
 import groovyx.net.http.ContentType
-import groovyx.net.http.HttpResponseDecorator
-import groovyx.net.http.RESTClient
 import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.HttpResponseDecorator
 import groovyx.net.http.Method
-import java.util.zip.ZipOutputStream
-import java.util.zip.ZipEntry
-import java.nio.channels.FileChannel
+import groovyx.net.http.RESTClient
+
 import java.nio.file.Files
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 import static groovy.json.JsonOutput.prettyPrint
 import static groovy.json.JsonOutput.toJson
