@@ -12,6 +12,7 @@ import groovyx.net.http.RESTClient
 
 import java.nio.file.Files
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 import static groovy.json.JsonOutput.prettyPrint
@@ -86,18 +87,17 @@ class CliMain {
         if (!context.dry && urlTilSvarfil) {
             String status
             InputStream stream
-            String output = context.output
             HTTPBuilder http = new HTTPBuilder(context.s3OutUrl)
             http.request(Method.GET, ContentType.BINARY) { req ->
                 uri.path = s3Path
                 response.'200' = { resp, binary ->
                     status = resp.status
                     stream = binary
-                    if (output) {
-                        File outfile = new File(output)
-                        outfile.delete()
-                        outfile << stream
-                    }
+                    File outfile = File.createTempFile('svar', '.zip')
+                    outfile.delete()
+                    outfile << stream
+                    unzip(outfile, this.context.outdir)
+                    printlnVerbose "Svarfil '${this.context.s3OutUrl}$s3Path' blev gemt lokalt her: ${outfile.absolutePath}"
                 }
                 response.failure = { resp ->
                     status = resp.status
@@ -105,7 +105,8 @@ class CliMain {
             }
             printlnVerbose "Download urlTilSvarfil '${context.s3OutUrl}$s3Path' returnerede HTTP status '${status}'"
             assert status == '200'
-            println "Masseindlevering gennemført. Svarfil '${context.s3OutUrl}$s3Path' blev gemt lokalt her: ${context.output}"
+            println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${context.outdir}"
+            println("Hav en god dag :)")
         }
     }
 
@@ -113,7 +114,7 @@ class CliMain {
         printlnVerbose "config: ${context.toMapString()}"
         def path = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         def dir = new File(context.directory)
-        println "Indberetter ${dir.listFiles().count { true }} filer i '${context.directory}' til '$path'"
+        println "Indberetter ${dir.listFiles().size()} filer i '${context.directory}' til '$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
             String completeUrl = "${path}${file.name}/indleveringer".toString()
@@ -186,13 +187,20 @@ ${prettyPrint(toJson(data))}"""
     }
 
     String generateS3Key(String period) {
-        String currentTimeIso = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
-        return "${period}/$currentTimeIso"
+        String s3Key
+        if (context.s3Key) {
+            s3Key = context.s3Key
+        } else {
+            String currentTimeIso = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
+            s3Key = "${period}/$currentTimeIso"
+        }
+        printlnVerbose("Bruger følgende S3-nøgle ${s3Key}")
+        return s3Key
     }
 
     String createZip(String inputDir) {
         String zipFileName = "${UUID.randomUUID().toString()}.zip"
-        String outputDirPath = createOutputDir(inputDir)
+        String outputDirPath = createOutputDir()
         String generatedZipPath = "$outputDirPath/${zipFileName}"
         ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(generatedZipPath))
         findAllExceptHiddenAndDirectories(inputDir).each { file ->
@@ -207,16 +215,22 @@ ${prettyPrint(toJson(data))}"""
         return generatedZipPath
     }
 
+    void unzip(File file, String outPath) {
+        ZipFile zipFile = new ZipFile(file)
+        new File(outPath).mkdirs()
+        zipFile.entries().each { ZipEntry zipEntry ->
+            File single = new File("${outPath}/${zipEntry.name}")
+            single.write(zipFile.getInputStream(zipEntry).getText('UTF-8'))
+        }
+    }
+
     protected ArrayList<File> findAllExceptHiddenAndDirectories(String inputDir) {
         new File(inputDir).listFiles().findAll { it.isFile() }
     }
 
-    String createOutputDir(String inputDir) {
-        String outputDirPath = "${inputDir}/generatedZip"
-        File outputDir = new File(outputDirPath)
-        if (!outputDir.exists()) {
-            outputDir.mkdir()
-        }
+    String createOutputDir() {
+        File tempDir = File.createTempDir()
+        String outputDirPath = tempDir.absolutePath
         return outputDirPath
     }
 }

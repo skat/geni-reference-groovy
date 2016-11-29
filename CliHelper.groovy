@@ -22,12 +22,13 @@ class CliHelper {
             h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
-            o longOpt: 'output', args: 1, "(only masseindlevering) output file, e.g. out.zip"
+            o longOpt: 'outdir', args: 1, "(only masseindlevering) output directory, e.g. ~/out"
             c longOpt: 'category', args: 1, "Reporting category. e.g. one of '${validCategories.join("', '")}' or '${validCategoryAlias.keySet().join("', '")}'", required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             v longOpt: 'verbose', 'Verbose error messages'
-            H(longOpt: 'header', args:2, valueSeparator:'=', argName: 'property=value', 'Headers eg. "content-type=application/pdf"')
+            k longOpt: 's3-key', args: 1, 'The key used when storing file in S3-storage'
+            H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'Headers eg. "content-type=application/pdf"')
             _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
             _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key file'
         }
@@ -77,17 +78,30 @@ class CliHelper {
         context.p12 = options.p12
         context.verbose = options.v
         context.masseindlevering = options.m
-        context.certificatePassword = options.'p12-password'?:null
+        context.certificatePassword = options.'p12-password' ?: null
         if (context.masseindlevering) {
+            context.s3Key = options.'s3-key' ?: null
             context.s3InUrl = replaceHost(context, 'in.s3')
             context.s3OutUrl = replaceHost(context, 'out.s3')
-            context.output = options.output ?: File.createTempFile('svarfil', '.zip', new File(System.getProperty('user.dir'))).getAbsolutePath()
+            context.outdir = findOutdir(options)
         }
         context.directory = options.arguments()[0]
-        if(options.header){
+        if (options.header) {
             context.extraHeaders = options.headers.toSpreadMap()
         }
         return context
+    }
+
+    protected static String findOutdir(OptionAccessor options) {
+        if (options.outdir) {
+            if (new File(options.outdir).exists()) {
+                throw new IllegalStateException("the folder ${options.outdir} already exists")
+            } else {
+                return options.outdir
+            }
+        } else {
+            return "${options.arguments()[0]}-svar-${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getDefault())}"
+        }
     }
 
     protected static String replaceHost(Map context, String replacement) {
