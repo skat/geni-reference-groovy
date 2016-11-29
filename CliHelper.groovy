@@ -18,7 +18,7 @@ class CliHelper {
         CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>',
                 header: 'Options:')
         cli.with {
-            m longOpt: 'masseindlevering', 'Submit multiple reports at once in a zip file', required: false
+            m longOpt: 'masseindlevering', 'Submit a large amount of reports at once', required: false
             h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
