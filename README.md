@@ -10,11 +10,6 @@ Indlevere en folder med konti-indberetninger
 ./indlever folder
 ```
 
-Masseindlevering
-```
-./indlever -m indleveringsId.zip
-```
-
 Prøv
 ```
 mkdir -p /tmp/sample_files/2017
