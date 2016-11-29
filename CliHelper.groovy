@@ -5,12 +5,6 @@ import groovy.io.FileType
  */
 class CliHelper {
 
-    static {
-        File.metaClass.getFileCount = {
-            delegate.listFiles().count { true }
-        }
-    }
-
     public static final validCategories = ['udl\u00e5n', 'indl\u00e5n', 'prioritetsl\u00e5n', 'pantebreve']
     public static final Map validCategoryAlias = [
             'ud'       : 'udl\u00e5n',

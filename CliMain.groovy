@@ -113,7 +113,7 @@ class CliMain {
         printlnVerbose "config: ${context.toMapString()}"
         def path = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         def dir = new File(context.directory)
-        println "Indberetter ${dir.fileCount} filer i '${context.directory}' til '$path'"
+        println "Indberetter ${dir.listFiles().count { true }} filer i '${context.directory}' til '$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
             String completeUrl = "${path}${file.name}/indleveringer".toString()
