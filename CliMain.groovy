@@ -93,11 +93,11 @@ class CliMain {
                 response.'200' = { resp, binary ->
                     status = resp.status
                     stream = binary
-                    File outfile = File.createTempFile('svar', '.zip')
-                    outfile.delete()
-                    outfile << stream
-                    unzip(outfile, this.context.outdir)
-                    printlnVerbose "Svarfil '${this.context.s3OutUrl}$s3Path' blev gemt lokalt her: ${outfile.absolutePath}"
+                    File.createTempFile('svar', '.zip'){ File outfile ->
+                        outfile.deleteOnExit()
+                        outfile << stream
+                        unzip(outfile, context.outdir)
+                    }
                 }
                 response.failure = { resp ->
                     status = resp.status
