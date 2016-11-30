@@ -105,7 +105,7 @@ class CliMain {
             }
             printlnVerbose "Download urlTilSvarfil '${context.s3OutUrl}$s3Path' returnerede HTTP status '${status}'"
             assert status == '200'
-            println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${context.outdir}"
+            println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${new File(context.outdir).absolutePath}"
             println("Hav en god dag :)")
         }
     }
@@ -201,7 +201,7 @@ ${prettyPrint(toJson(data))}"""
     String createZip(String inputDir) {
         String zipFileName = "${UUID.randomUUID().toString()}.zip"
         String outputDirPath = createOutputDir()
-        String generatedZipPath = "$outputDirPath/${zipFileName}"
+        String generatedZipPath = "$outputDirPath/$zipFileName"
         ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(generatedZipPath))
         findAllExceptHiddenAndDirectories(inputDir).each { file ->
             zipOutputStream.putNextEntry(new ZipEntry(file.name))
@@ -228,7 +228,7 @@ ${prettyPrint(toJson(data))}"""
         new File(inputDir).listFiles().findAll { it.isFile() }
     }
 
-    String createOutputDir() {
+    protected String createOutputDir() {
         File tempDir = File.createTempDir()
         String outputDirPath = tempDir.absolutePath
         return outputDirPath

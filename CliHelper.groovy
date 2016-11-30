@@ -44,7 +44,11 @@ class CliHelper {
             cli.usage()
             throw new IllegalArgumentException("You must provide exactly one directory or file, not ${options.arguments().size}.")
         }
-
+        if (options.outdir) {
+            if (new File(options.outdir).exists()) {
+                throw new IllegalArgumentException("The folder ${options.outdir} already exists, please chosse an other output folder")
+            }
+        }
         if (!validCategories.contains(options.category) && !validCategoryAlias.containsKey(options.category)) {
             throw new IllegalArgumentException("Category cannot be '$options.category'.\n" +
                     "Must be one of '${(validCategories + validCategoryAlias.keySet()).join("', '")}'.")
@@ -93,15 +97,7 @@ class CliHelper {
     }
 
     protected static String findOutdir(OptionAccessor options) {
-        if (options.outdir) {
-            if (new File(options.outdir).exists()) {
-                throw new IllegalStateException("the folder ${options.outdir} already exists")
-            } else {
-                return options.outdir
-            }
-        } else {
-            return "${options.arguments()[0]}-svar-${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getDefault())}"
-        }
+        return options.outdir ?: "${options.arguments()[0]}-svar-${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getDefault())}"
     }
 
     protected static String replaceHost(Map context, String replacement) {
