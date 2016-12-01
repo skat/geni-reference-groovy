@@ -240,6 +240,7 @@ ${prettyPrint(toJson(data))}"""
                 break
                 //do nothing, poll again
             }
+            sleep(3000)
         }
         return urlTilSvarfil
 
