@@ -6,7 +6,7 @@ try {
     Logger.getLogger('').setLevel(Level.OFF) //stands top logger
     Map context = CliHelper.parseOptions(args)
     try {
-        new CliMain(context: context).with {
+        new RenteClient(context: context).with {
             context.masseindlevering ? masseindlevering() : enkeltindlevering()
         }
     } catch (Exception e) {

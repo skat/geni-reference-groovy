@@ -14,6 +14,7 @@ class CliHelper {
     public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
 
     static Map parseOptions(args) {
+
         OptionAccessor options
         CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>',
                 header: 'Options:')
@@ -27,10 +28,10 @@ class CliHelper {
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             v longOpt: 'verbose', 'Verbose error messages'
-            k longOpt: 's3-key', args: 1, 'The key used when storing file in S3-storage'
+            k longOpt: 's3-key', args: 1, 'The key used when storing otherFile in S3-storage'
             H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'Headers eg. "content-type=application/pdf"')
-            _ longOpt: 'p12', args: 1, 'PKCS12 Key file, .e.g. "~/.oces/indberetter.p12"'
-            _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key file'
+            _ longOpt: 'p12', args: 1, 'PKCS12 Key otherFile, .e.g. "~/.oces/indberetter.p12"'
+            _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key otherFile'
         }
         options = cli.parse(args)
         if (!options) {
@@ -42,7 +43,7 @@ class CliHelper {
         }
         if (options.arguments().size != 1) {
             cli.usage()
-            throw new IllegalArgumentException("You must provide exactly one directory or file, not ${options.arguments().size}.")
+            throw new IllegalArgumentException("You must provide exactly one directory or otherFile, not ${options.arguments().size}.")
         }
         if (options.outdir) {
             if (new File(options.outdir).exists()) {
@@ -64,7 +65,7 @@ class CliHelper {
                     pkcs12List << it.absolutePath
                 }
             }
-            println "NOTICE: You have not provided a PKCS12 file."
+            println "NOTICE: You have not provided a PKCS12 otherFile."
             if (pkcs12List.empty) {
                 println "NOTICE: You don't seem to have any OCES keys installed (in '${System.getProperty('user.home')}/.oces')"
             } else {
