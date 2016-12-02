@@ -247,7 +247,7 @@ ${prettyPrint(toJson(data))}"""
     }
 
     protected String findCertificatePassword() {
-        return context.certificatePassword ?: System.console()?.readPassword("Enter certificate passphrase: ") ?: ''
+        return context.certificatePassword ?: (System.console()?.readPassword("Enter certificate passphrase: ") as String) ?: ''
     }
 
     void printlnVerbose(String tekst) {
