@@ -24,6 +24,8 @@ class RenteClient {
 
     Map context = [:]
 
+    String certificatePassword
+
     void masseindlevering() {
         printlnVerbose "config: ${context.toMapString()}"
 
@@ -158,6 +160,7 @@ ${prettyPrint(toJson(data))}"""
             String jsontxt = json.text
             printlnVerbose "Svar på aktivering: ${jsontxt}"
         }
+        assert masseindleveringsresurse : 'Der skete en fejl ved aktiveringen'
         urlTilSvarfil = pollForFinalProcessingResult(masseindleveringsresurse)
         return urlTilSvarfil
     }
@@ -247,7 +250,10 @@ ${prettyPrint(toJson(data))}"""
     }
 
     protected String findCertificatePassword() {
-        return context.certificatePassword ?: (System.console()?.readPassword("Enter certificate passphrase: ") as String) ?: ''
+        if (this.certificatePassword == null) {
+            this.certificatePassword = context.certificatePassword ?: (System.console()?.readPassword("Enter certificate passphrase: ") as String) ?: ''
+        }
+        return this.certificatePassword
     }
 
     void printlnVerbose(String tekst) {
