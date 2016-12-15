@@ -31,7 +31,6 @@ class CliHelper {
             k longOpt: 's3-key', args: 1, 'The key used when storing otherFile in S3-storage'
             H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'HTTP Header eg. "content-type=application/pdf", this argument can be repeated')
             _ longOpt: 'p12', args: 1, 'PKCS12 Key otherFile, .e.g. "~/.oces/indberetter.p12"'
-            _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key otherFile'
         }
         options = cli.parse(args)
         if (!options) {
@@ -83,7 +82,7 @@ class CliHelper {
         context.p12 = options.p12
         context.verbose = options.v
         context.masseindlevering = options.m
-        context.certificatePassword = options.'p12-password' ?: null
+        context.certificatePassword = null
         if (context.masseindlevering) {
             context.s3Key = options.'s3-key' ?: null
             context.s3InUrl = replaceHost(context, 'in.s3')
