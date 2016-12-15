@@ -56,7 +56,7 @@ class RenteClient {
         printlnVerbose "config: ${context.toMapString()}"
         def path = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         def dir = new File(context.directory)
-        println "Indberetter ${dir.listFiles().size()} filer i '${context.directory}' til '$path'"
+        println "Indberetter ${dir.listFiles().size()} filer i '${context.directory}' til '${context.baseUrl}$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
             String completeUrl = "${path}${file.name}/indleveringer".toString()

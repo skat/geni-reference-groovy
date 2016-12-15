@@ -23,13 +23,13 @@ class CliHelper {
             h longOpt: 'help', 'Usage information', required: false
             n longOpt: 'dry-run', "Dry run. Do not POST anything"
             b longOpt: 'base-url', args: 1, "Base url, e.g. $defaultBaseUrl"
-            o longOpt: 'outdir', args: 1, "(only masseindlevering) output directory, e.g. ~/out"
+            o longOpt: 'outdir', args: 1, "output directory, e.g. ~/out"
             c longOpt: 'category', args: 1, "Reporting category. e.g. one of '${validCategories.join("', '")}' or '${validCategoryAlias.keySet().join("', '")}'", required: true
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             v longOpt: 'verbose', 'Verbose error messages'
             k longOpt: 's3-key', args: 1, 'The key used when storing otherFile in S3-storage'
-            H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'Headers eg. "content-type=application/pdf"')
+            H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'HTTP Header eg. "content-type=application/pdf", this argument can be repeated')
             _ longOpt: 'p12', args: 1, 'PKCS12 Key otherFile, .e.g. "~/.oces/indberetter.p12"'
             _ longOpt: 'p12-password', args: 1, 'Passphrase for PKCS12 Key otherFile'
         }
