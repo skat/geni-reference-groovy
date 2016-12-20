@@ -59,9 +59,13 @@ class CliHelper {
         }
         if (!options.p12) {
             def pkcs12List = []
-            new File("${System.getProperty('user.home')}/.oces").eachFile(FileType.FILES) {
-                if (it.name.endsWith('.p12')) {
-                    pkcs12List << it.absolutePath
+
+            File ocesFolder = new File("${System.getProperty('user.home')}/.oces")
+            if (ocesFolder.exists()) {
+                ocesFolder.eachFile(FileType.FILES) {
+                    if (it.name.endsWith('.p12')) {
+                        pkcs12List << it.absolutePath
+                    }
                 }
             }
             println "NOTICE: You have not provided a PKCS12 otherFile."
