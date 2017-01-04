@@ -27,28 +27,36 @@ class RenteClient {
     String certificatePassword
 
     void masseindlevering() {
-        printlnVerbose "config: ${context.toMapString()}"
+        try {
+            printlnVerbose "config: ${context.toMapString()}"
 
-        File indleveringsfil = createZip(context.directory)
+            File indleveringsfil = createZip(context.directory)
 
-        String generatedS3Key = generateS3Key(context.period)
+            String generatedS3Key = generateS3Key(context.period)
 
-        String s3Path = "/${context.category}/pligtige/${context.se}/${generatedS3Key}"
-        String apiPath = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/masseindleveringer/"
+            String s3Path = "/${context.category}/pligtige/${context.se}/${generatedS3Key}"
+            String apiPath = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/masseindleveringer/"
 
 
-        if (!context.dry) {
-            printlnVerbose "Uploader '${indleveringsfil.name}' til url '${context.s3InUrl}$s3Path'"
-            S3UploadReusult s3UploadReusult = uploadToS3In(s3Path, indleveringsfil)
-            printlnVerbose "Aktiverer masseindlevering '${context.s3InUrl}$s3Path' på url '${context.baseUrl}$apiPath'"
-            String jsonBody = createRequestJsonBody(s3UploadReusult)
-            String urlTilSvarfil = aktiverMasseindlevering(apiPath, jsonBody)
-            printlnVerbose "Henter urlTilSvarfil fra url '${context.s3OutUrl}$s3Path'"
-            downloadAndUnzipSvarfilFromS3(urlTilSvarfil, s3Path)
-            println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${new File(context.outdir).absolutePath}"
-            println("Hav en god dag :)")
-        } else {
-            println('Ingen upload foretages, da dette er dry run')
+            if (!context.dry) {
+                printlnVerbose "Uploader '${indleveringsfil.name}' til url '${context.s3InUrl}$s3Path'"
+                S3UploadReusult s3UploadReusult = uploadToS3In(s3Path, indleveringsfil)
+                printlnVerbose "Aktiverer masseindlevering '${context.s3InUrl}$s3Path' på url '${context.baseUrl}$apiPath'"
+                String jsonBody = createRequestJsonBody(s3UploadReusult)
+                String urlTilSvarfil = aktiverMasseindlevering(apiPath, jsonBody)
+                if (urlTilSvarfil) {
+                    printlnVerbose "Henter svarfil fra url '${context.s3OutUrl}$s3Path'"
+                    downloadAndUnzipSvarfilFromS3(urlTilSvarfil, s3Path)
+                    println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${new File(context.outdir).absolutePath}"
+                    println("Hav en god dag :)")
+                }
+            } else {
+                println('Ingen upload foretages, da dette er dry run')
+            }
+        }
+        catch (IllegalStateException e){
+            println e.message
+            println "masseindlevering fejlede"
         }
     }
 
@@ -102,7 +110,7 @@ HTTP Status code: ${resp.status}
 Headers:
 $headers
 Body:
-${prettyPrint(toJson(data))}"""
+${data}"""
             } else {
                 println "Indleveringen fejlede med HTTP status: $resp.statusLine"
             }
@@ -125,8 +133,8 @@ ${prettyPrint(toJson(data))}"""
                 }
             }
             response.failure = { response ->
-                status = response.status
-                throw new IllegalStateException("Statuskoden var $status, men $expectedStatus var forventet")
+                int status = response.status
+                throw new IllegalStateException("Statuskoden var $status, men 200 var forventet")
             }
         }
     }
@@ -222,6 +230,7 @@ ${prettyPrint(toJson(data))}"""
         String urlTilSvarfil
         while (true) {
             String masseindleveringsstatus
+            printlnVerbose "Henter status fra ${context.baseUrl}${location}"
             RESTClient client = createRestClient(context.baseUrl)
             client.get(path: location,
                     requestContentType: 'application/json'
@@ -231,19 +240,20 @@ ${prettyPrint(toJson(data))}"""
 
                 def slurper = new JsonSlurper().parseText(json.text)
                 masseindleveringsstatus = slurper.data.attributes.status
+                if (masseindleveringsstatus == 'FEJLET') {
+                    println slurper
+                }
                 printlnVerbose "Status på masseindleveringen er: ${masseindleveringsstatus}"
                 urlTilSvarfil = slurper.data?.links?.svarfil
             }
             if (!masseindleveringsstatus) {
                 println("Der skete en fejl da status på aktiveringen skulle hentes fra serveren")
                 System.exit(1)
-            } else if (masseindleveringsstatus == 'AFSLUTTET') {
+            } else if (masseindleveringsstatus != 'IGANG') {
                 break
-            } else if (masseindleveringsstatus == 'FEJLET') {
-                break
-                //do nothing, poll again
             }
             sleep(3000)
+            //do nothing, poll again
         }
         return urlTilSvarfil
 
