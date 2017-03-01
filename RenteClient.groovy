@@ -91,7 +91,7 @@ class RenteClient {
                     restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
                         assertResponseStatus(response, 200)
                         def slurper = new JsonSlurper().parseText(json.text)
-                        def status = slurper.data.attributes."rente-indberetning-tilbagemelding"."tilbagemelding-oplysninger"."indberetning-validering-status"
+                        def status = slurper.data.attributes."renteIndberetningTilbagemelding"."tilbagemeldingOplysninger"."indberetningValideringStatus"
                         println "Status på indleveringen er: ${status}"
                         if (status != 'VALID' && context.verbose) {
                             println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
