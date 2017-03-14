@@ -233,7 +233,7 @@ ${data}"""
             String masseindleveringsstatus
             printlnVerbose "Henter status fra ${context.baseUrl}${location}"
             RESTClient client = createRestClient(context.baseUrl)
-            client.get(path: location,
+            client.get(uri: new URI( context.baseUrl+location ),
                     requestContentType: 'application/json'
             ) { response, json ->
                 printlnVerbose "Masseindlevering returnerede HTTP status ${response.statusLine}"
