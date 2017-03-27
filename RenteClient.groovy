@@ -1,26 +1,25 @@
+
 import groovy.json.JsonBuilder
-@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
-@Grab('oauth.signpost:signpost-core:1.2.1.2')
-@Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
-@Grab('org.codehaus.groovy:groovy-json:2.4.6')
 import groovy.json.JsonSlurper
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.HttpResponseDecorator
-import groovyx.net.http.Method
-import groovyx.net.http.RESTClient
+import groovyx.net.http.*
 
 import java.nio.file.Files
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-import static groovy.json.JsonOutput.prettyPrint
-import static groovy.json.JsonOutput.toJson
-
+@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
+@Grab('oauth.signpost:signpost-core:1.2.1.2')
+@Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
+@Grab('org.codehaus.groovy:groovy-json:2.4.6')
+@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
+@Grab('oauth.signpost:signpost-core:1.2.1.2')
+@Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
+@Grab('org.codehaus.groovy:groovy-json:2.4.6')
 class RenteClient {
 
     static final MAX_KONTO_ID_LENGTH = 30
+    static final String JSON_API_HEADER = "application/vnd.api+json"
 
     Map context = [:]
 
@@ -76,6 +75,7 @@ class RenteClient {
                 if (!context.dry) {
                     // POST indlevering
                     restClient.post(
+                            headers: ['Accept': JSON_API_HEADER],
                             path: completeUrl,
                             requestContentType: ContentType.BINARY,
                             body: file.bytes
@@ -88,7 +88,7 @@ class RenteClient {
                 if (!context.dry && location) {
                     // GET status på indlevering
                     String decodedUrl = URLDecoder.decode(location, 'UTF-8')
-                    restClient.get(path: decodedUrl) { HttpResponseDecorator response, json ->
+                    restClient.get(path: decodedUrl, headers: ['Accept': JSON_API_HEADER]) { HttpResponseDecorator response, json ->
                         assertResponseStatus(response, 200)
                         def slurper = new JsonSlurper().parseText(json.text)
                         def status = slurper.data.attributes."renteIndberetningTilbagemelding"."tilbagemeldingOplysninger"."indberetningValideringStatus"
@@ -143,6 +143,7 @@ ${data}"""
     protected S3UploadReusult uploadToS3In(String s3Path, File indleveringsfil) {
         RESTClient restClient = createRestClient(context.s3InUrl)
         def response = restClient.put(
+                headers: ['Accept': JSON_API_HEADER],
                 path: s3Path,
                 requestContentType: ContentType.BINARY,
                 body: indleveringsfil.bytes
@@ -158,6 +159,7 @@ ${data}"""
         String masseindleveringsresurse
         RESTClient restClient = createRestClient(context.baseUrl)
         restClient.post(
+                headers: ['Accept': JSON_API_HEADER],
                 path: apiPath,
                 requestContentType: 'application/json',
                 body: jsonBody
