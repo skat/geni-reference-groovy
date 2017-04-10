@@ -28,7 +28,7 @@ class CliHelper {
             s longOpt: 'se', args: 1, 'SE number of the reporter', required: true
             p longOpt: 'period', args: 1, 'Period, e.g. "2017"', required: true
             v longOpt: 'verbose', 'Verbose error messages'
-            d longOpt: 'datafile-key', args: 1, 'The key used when storing masseindlevering datafile on in.s3 host.'
+            k longOpt: 's3-key', args: 1, 'The key used when storing otherFile in S3-storage'
             H(longOpt: 'header', args: 2, valueSeparator: '=', argName: 'property=value', 'HTTP Header eg. "content-type=application/pdf", this argument can be repeated')
             _ longOpt: 'p12', args: 1, 'PKCS12 Key otherFile, .e.g. "~/.oces/indberetter.p12"'
         }
@@ -88,7 +88,7 @@ class CliHelper {
         context.masseindlevering = options.m
         context.certificatePassword = null
         if (context.masseindlevering) {
-            context.datafileKey = options.'datafile-key' ?: null
+            context.s3Key = options.'s3-key' ?: null
             context.s3InUrl = replaceHost(context, 'in.s3')
             context.s3OutUrl = replaceHost(context, 'out.s3')
             context.outdir = findOutdir(options)
