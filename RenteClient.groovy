@@ -1,7 +1,5 @@
-
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import groovyx.net.http.*
 
 import java.nio.file.Files
 import java.util.zip.ZipEntry
@@ -53,7 +51,7 @@ class RenteClient {
                 println('Ingen upload foretages, da dette er dry run')
             }
         }
-        catch (IllegalStateException e){
+        catch (IllegalStateException e) {
             println e.message
             println "masseindlevering fejlede"
         }
@@ -91,7 +89,7 @@ class RenteClient {
                     restClient.get(path: decodedUrl, headers: ['Accept': JSON_API_HEADER]) { HttpResponseDecorator response, json ->
                         assertResponseStatus(response, 200)
                         def slurper = new JsonSlurper().parseText(json.text)
-                        def status = slurper.data.attributes."renteIndberetningTilbagemelding"."tilbagemeldingOplysninger"."indberetningValideringStatus"
+                        def status = slurper.data.attributes.renteIndberetningTilbagemeldingStruktur.tilbagemeldingOplysninger.indberetningValideringStatus
                         println "Status på indleveringen er: ${status}"
                         if (status != 'VALID' && context.verbose) {
                             println "Filen '${file.name}' er ugyldig med teksterne:\n  ${slurper.data?.attributes?.beskeder?.join("\n  ")}"
@@ -171,7 +169,7 @@ ${data}"""
             String jsontxt = json.text
             printlnVerbose "Svar på aktivering: ${jsontxt}"
         }
-        assert masseindleveringsresurse : 'Der skete en fejl ved aktiveringen'
+        assert masseindleveringsresurse: 'Der skete en fejl ved aktiveringen'
         urlTilSvarfil = pollForFinalProcessingResult(masseindleveringsresurse)
         return urlTilSvarfil
     }
@@ -179,6 +177,7 @@ ${data}"""
     protected String createRequestJsonBody(S3UploadReusult s3UploadReusult) {
         JsonBuilder requestJson = new JsonBuilder()
         requestJson.data {
+            type 'masseindlevering'
             attributes {
                 datafilUrl "${context.s3InUrl}${s3UploadReusult.path}"
                 datafilMd5 s3UploadReusult.md5
@@ -235,7 +234,7 @@ ${data}"""
             String masseindleveringsstatus
             printlnVerbose "Henter status fra ${context.baseUrl}${location}"
             RESTClient client = createRestClient(context.baseUrl)
-            client.get(uri: new URI( context.baseUrl+location ),
+            client.get(uri: new URI(context.baseUrl + location),
                     requestContentType: 'application/json'
             ) { response, json ->
                 printlnVerbose "Masseindlevering returnerede HTTP status ${response.statusLine}"
@@ -243,11 +242,11 @@ ${data}"""
 
                 def slurper = new JsonSlurper().parseText(json.text)
                 masseindleveringsstatus = slurper.data.attributes.status
-                if (masseindleveringsstatus == 'FEJLET') {
+                if (masseindleveringsstatus == 'Fejlet') {
                     println slurper
                 }
                 printlnVerbose "Status på masseindleveringen er: ${masseindleveringsstatus}"
-                urlTilSvarfil = slurper.data?.svarfilUrl
+                urlTilSvarfil = slurper.data?.attributes?.svarfilUrl
             }
             if (!masseindleveringsstatus) {
                 println("Der skete en fejl da status på aktiveringen skulle hentes fra serveren")
