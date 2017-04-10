@@ -180,8 +180,8 @@ ${data}"""
         JsonBuilder requestJson = new JsonBuilder()
         requestJson.data {
             attributes {
-                s3Key "${context.s3InUrl}${s3UploadReusult.path}"
-                s3Md5Checksum s3UploadReusult.md5
+                datafilUrl "${context.s3InUrl}${s3UploadReusult.path}"
+                datafilMd5 s3UploadReusult.md5
             }
         }
         String jsonBody = requestJson.toString()
@@ -247,7 +247,7 @@ ${data}"""
                     println slurper
                 }
                 printlnVerbose "Status på masseindleveringen er: ${masseindleveringsstatus}"
-                urlTilSvarfil = slurper.data?.links?.svarfil
+                urlTilSvarfil = slurper.data?.svarfilUrl
             }
             if (!masseindleveringsstatus) {
                 println("Der skete en fejl da status på aktiveringen skulle hentes fra serveren")
@@ -274,15 +274,15 @@ ${data}"""
     }
 
     String generateS3Key(String period) {
-        String s3Key
-        if (context.s3Key) {
-            s3Key = context.s3Key
+        String datafileKey
+        if (context.datafileKey) {
+            datafileKey = context.datafileKey
         } else {
             String currentTimeIso = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
-            s3Key = "${period}/$currentTimeIso"
+            datafileKey = "${period}/$currentTimeIso"
         }
-        printlnVerbose("Bruger følgende S3-nøgle ${s3Key}")
-        return s3Key
+        printlnVerbose("Bruger følgende datafil-nøgle ${datafileKey}")
+        return datafileKey
     }
 
     File createZip(String inputDir) {
