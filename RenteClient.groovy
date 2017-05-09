@@ -104,6 +104,7 @@ class RenteClient {
 
     protected void addErrorHandlingForClient(HTTPBuilder client) {
         client.handler.failure = { HttpResponseDecorator resp, data ->
+            println "Indleveringen fejlede med HTTP status: $resp.statusLine"
             if (context.verbose) {
                 String headers = resp.headers.each { it -> "${it.name}: ${it.value}" }.join("\n")
                 println """HTTP-kald fejlede! Detaljeret svar fra serveren:
@@ -112,8 +113,6 @@ Headers:
 $headers
 Body:
 ${data}"""
-            } else {
-                println "Indleveringen fejlede med HTTP status: $resp.statusLine"
             }
         }
     }
