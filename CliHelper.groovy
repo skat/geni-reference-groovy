@@ -11,7 +11,7 @@ class CliHelper {
             'ind'      : 'indl\u00e5n',
             'prioritet': 'prioritetsl\u00e5n',
             'pant'     : 'pantebreve']
-    public static final String defaultBaseUrl = 'https://api.tfe.tse3pindberet.skat.dk'
+    public static final String defaultBaseUrl = 'https://api.tse3pindberet.tfe.skat.dk'
 
     static Map parseOptions(args) {
 
