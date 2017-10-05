@@ -5,12 +5,13 @@ import groovy.io.FileType
  */
 class CliHelper {
 
-    public static final validCategories = ['udl\u00e5n', 'indl\u00e5n', 'prioritetsl\u00e5n', 'pantebreve']
+    public static final validCategories = ['udl\u00e5n', 'indl\u00e5n', 'prioritetsl\u00e5n', 'pantebreve', 'pensiondiverse']
     public static final Map validCategoryAlias = [
             'ud'       : 'udl\u00e5n',
             'ind'      : 'indl\u00e5n',
             'prioritet': 'prioritetsl\u00e5n',
-            'pant'     : 'pantebreve']
+            'pant'     : 'pantebreve',
+            'pension'  : 'pensiondiverse']
     public static final String defaultBaseUrl = 'https://api.tse3pindberet.tfe.skat.dk'
 
     static Map parseOptions(args) {
