@@ -4,6 +4,8 @@ import groovy.json.JsonSlurper
 import groovyx.net.http.*
 
 import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -225,7 +227,10 @@ ${data}"""
         }
     }
 
-    protected Object addDefaultHeaders(client) {
+    protected Object addDefaultHeaders(HTTPBuilder client) {
+        println(referenceClientUserAgent)
+        client.defaultRequestHeaders."User-Agent" = referenceClientUserAgent
+
         context.extraHeaders.each { headerName, headerValue ->
             client.defaultRequestHeaders."${headerName}" = headerValue
         }
@@ -329,6 +334,38 @@ ${data}"""
         if (!condition) {
             throw new IllegalStateException(message)
         }
+    }
+
+    String getReferenceClientUserAgent() {
+        StringBuilder stringBuilder = new StringBuilder("Referenceklient")
+        stringBuilder << "/"
+        stringBuilder << getCodeVersion()
+        stringBuilder << " "
+        stringBuilder << "("
+        stringBuilder << getOS()
+        stringBuilder << "; "
+        stringBuilder << getFrameworks()
+        stringBuilder << ")"
+        return stringBuilder.toString()
+    }
+
+    private String getCodeVersion() {
+        Path projectDir = Paths.get(getClass().protectionDomain.codeSource.location.path).parent
+        Path head = projectDir.resolve('.git').resolve('HEAD')
+
+        if (!Files.exists(head) || !head.text) {
+            return "unknown version"
+        } else {
+            return head.text - "\n"
+        }
+    }
+
+    private static String getOS() {
+        return System.getProperty("os.name")
+    }
+
+    private static String getFrameworks() {
+        return "JVM ${System.getProperty("java.version")}; Groovy ${GroovySystem.version}"
     }
 }
 
