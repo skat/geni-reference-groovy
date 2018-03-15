@@ -217,6 +217,7 @@ ${data}"""
         addErrorHandlingForClient(client)
         addCertificateInfo(client)
         addDefaultHeaders(client)
+        addUserAgentHeader(client)
     }
 
     void addCertificateInfo(HTTPBuilder client) {
@@ -228,12 +229,13 @@ ${data}"""
     }
 
     protected Object addDefaultHeaders(HTTPBuilder client) {
-        println(referenceClientUserAgent)
-        client.defaultRequestHeaders."User-Agent" = referenceClientUserAgent
-
         context.extraHeaders.each { headerName, headerValue ->
             client.defaultRequestHeaders."${headerName}" = headerValue
         }
+    }
+
+    protected void addUserAgentHeader(HTTPBuilder client) {
+        client.headers.put("User-Agent", referenceClientUserAgent)
     }
 
     protected String pollForFinalProcessingResult(String location) {
@@ -266,7 +268,6 @@ ${data}"""
             //do nothing, poll again
         }
         return urlTilSvarfil
-
     }
 
     protected String findCertificatePassword() {
