@@ -261,7 +261,7 @@ ${data}"""
             if (!masseindleveringsstatus) {
                 println("Der skete en fejl da status på aktiveringen skulle hentes fra serveren")
                 System.exit(1)
-            } else if (!(masseindleveringsstatus in ['Oprettet', 'Forbereder', 'Behandler'])) {
+            } else if (!(masseindleveringsstatus in ['Oprettet', 'Forbereder', 'Klar til behandling', 'Behandler'])) {
                 break
             }
             sleep(3000)
