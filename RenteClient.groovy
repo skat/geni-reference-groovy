@@ -20,7 +20,7 @@ import java.util.zip.ZipOutputStream
 @Grab('org.codehaus.groovy:groovy-json:2.4.6')
 class RenteClient {
 
-    static final MAX_KONTO_ID_LENGTH = 30
+    static final Integer MAX_KONTO_ID_LENGTH = 30
     static final String JSON_API_HEADER = "application/vnd.api+json"
 
     Map context = [:]
@@ -41,7 +41,7 @@ class RenteClient {
 
             if (!context.dry) {
                 printlnVerbose "Uploader '${indleveringsfil.name}' til url '${context.s3InUrl}$s3Path'"
-                S3UploadReusult s3UploadReusult = uploadToS3In(s3Path, indleveringsfil)
+                S3UploadResult s3UploadReusult = uploadToS3In(s3Path, indleveringsfil)
                 printlnVerbose "Aktiverer masseindlevering '${context.s3InUrl}$s3Path' på url '${context.baseUrl}$apiPath'"
                 String jsonBody = createRequestJsonBody(s3UploadReusult)
                 String urlTilSvarfil = aktiverMasseindlevering(apiPath, jsonBody)
@@ -49,15 +49,15 @@ class RenteClient {
                     printlnVerbose "Henter svarfil fra url '${context.s3OutUrl}$s3Path'"
                     downloadAndUnzipSvarfilFromS3(urlTilSvarfil, s3Path)
                     println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${new File(context.outdir).absolutePath}"
-                    println("Hav en god dag :)")
+                    println 'Hav en god dag :)'
                 }
             } else {
-                println('Ingen upload foretages, da dette er dry run')
+                println 'Ingen upload foretages, da dette er dry run'
             }
         }
         catch (IllegalStateException e) {
             println e.message
-            println "masseindlevering fejlede"
+            println 'masseindlevering fejlede'
         }
     }
 
@@ -68,7 +68,7 @@ class RenteClient {
         println "Indberetter ${dir.listFiles().size()} filer i '${context.directory}' til '${context.baseUrl}$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
-            String completeUrl = "${path}${file.name}/indleveringer".toString()
+            String completeUrl = "${path}${file.name}/indleveringer"
             if (file.name.size() > MAX_KONTO_ID_LENGTH) {
                 println "KontoID '${file.name}' er for langt. Max længde er ${MAX_KONTO_ID_LENGTH}"
             } else {
@@ -143,7 +143,7 @@ ${data}"""
         }
     }
 
-    protected S3UploadReusult uploadToS3In(String s3Path, File indleveringsfil) {
+    protected S3UploadResult uploadToS3In(String s3Path, File indleveringsfil) {
         RESTClient restClient = createRestClient(context.s3InUrl)
         def response = restClient.put(
                 headers: ['Accept': JSON_API_HEADER],
@@ -154,7 +154,7 @@ ${data}"""
 
         printlnVerbose "Upload af '${indleveringsfil.name}' returnerede HTTP status ${response.statusLine}"
         assertResponseStatus(response, 200)
-        return new S3UploadReusult(path: response.headers.location, md5: response.headers.'Content-MD5')
+        return new S3UploadResult(path: response.headers.location, md5: response.headers.'Content-MD5')
     }
 
     protected String aktiverMasseindlevering(String apiPath, String jsonBody) {
@@ -179,7 +179,7 @@ ${data}"""
         return urlTilSvarfil
     }
 
-    protected String createRequestJsonBody(S3UploadReusult s3UploadReusult) {
+    protected String createRequestJsonBody(S3UploadResult s3UploadReusult) {
         JsonBuilder requestJson = new JsonBuilder()
         requestJson.data {
             type 'masseindlevering'
@@ -223,8 +223,7 @@ ${data}"""
     void addCertificateInfo(HTTPBuilder client) {
         if (context.p12) {
             String password = findCertificatePassword()
-            client.auth.certificate(new File(context.p12).toURI().toURL().toString(),
-                    (password) as String)
+            client.auth.certificate(new File(context.p12).toURI().toURL().toString(), password as String)
         }
     }
 
@@ -235,7 +234,7 @@ ${data}"""
     }
 
     protected void addUserAgentHeader(HTTPBuilder client) {
-        client.headers.put("User-Agent", referenceClientUserAgent)
+        client.headers.put('User-Agent', referenceClientUserAgent)
     }
 
     protected String pollForFinalProcessingResult(String location) {
@@ -259,7 +258,7 @@ ${data}"""
                 urlTilSvarfil = slurper.data?.attributes?.svarfilUrl
             }
             if (!masseindleveringsstatus) {
-                println("Der skete en fejl da status på aktiveringen skulle hentes fra serveren")
+                println 'Der skete en fejl da status på aktiveringen skulle hentes fra serveren'
                 System.exit(1)
             } else if (!(masseindleveringsstatus in ['Oprettet', 'Forbereder', 'Klar til behandling', 'Behandler'])) {
                 break
@@ -278,7 +277,7 @@ ${data}"""
     }
 
     void printlnVerbose(String tekst) {
-        if (context.verbose) println(tekst)
+        if (context.verbose) println tekst
     }
 
     String generateS3Key(String period) {
@@ -286,7 +285,7 @@ ${data}"""
         if (context.datafileKey) {
             datafileKey = context.datafileKey
         } else {
-            String currentTimeIso = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
+            String currentTimeIso = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC'))
             datafileKey = "${period}/$currentTimeIso"
         }
         printlnVerbose("Bruger følgende datafil-nøgle ${datafileKey}")
@@ -297,15 +296,13 @@ ${data}"""
         String zipFileName = "${UUID.randomUUID().toString()}.zip"
         String outputDirPath = createOutputDir()
         String generatedZipPath = "$outputDirPath/$zipFileName"
-        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(generatedZipPath))
-        findAllExceptHiddenAndDirectories(inputDir).each { file ->
-            zipOutputStream.putNextEntry(new ZipEntry(file.name))
-            file.withInputStream { InputStream inputStream ->
-                Files.copy(inputStream, zipOutputStream)
+        new ZipOutputStream(new FileOutputStream(generatedZipPath)).withCloseable { ZipOutputStream zipOutputStream ->
+            findAllExceptHiddenAndDirectories(inputDir).each { File file ->
+                zipOutputStream.putNextEntry(new ZipEntry(file.name))
+                Files.copy(file.toPath(), zipOutputStream)
+                zipOutputStream.closeEntry()
             }
-            zipOutputStream.closeEntry()
         }
-        zipOutputStream.close()
         printlnVerbose "Har genereret zip med indleveringsfiler her: $generatedZipPath"
         File file = new File(generatedZipPath)
         file.deleteOnExit()
@@ -338,15 +335,15 @@ ${data}"""
     }
 
     String getReferenceClientUserAgent() {
-        StringBuilder stringBuilder = new StringBuilder("Referenceklient")
-        stringBuilder << "/"
+        StringBuilder stringBuilder = new StringBuilder('Referenceklient')
+        stringBuilder << '/'
         stringBuilder << getCodeVersion()
-        stringBuilder << " "
-        stringBuilder << "("
+        stringBuilder << ' '
+        stringBuilder << '('
         stringBuilder << getOS()
-        stringBuilder << "; "
+        stringBuilder << '; '
         stringBuilder << getFrameworks()
-        stringBuilder << ")"
+        stringBuilder << ')'
         return stringBuilder.toString()
     }
 
@@ -355,22 +352,22 @@ ${data}"""
         Path head = projectDir.resolve('.git').resolve('HEAD')
 
         if (!Files.exists(head) || !head.text) {
-            return "unknown version"
+            return 'unknown version'
         } else {
-            return head.text - "\n"
+            return head.text - '\n'
         }
     }
 
     private static String getOS() {
-        return System.getProperty("os.name")
+        return System.getProperty('os.name')
     }
 
     private static String getFrameworks() {
-        return "JVM ${System.getProperty("java.version")}; Groovy ${GroovySystem.version}"
+        return "JVM ${System.getProperty('java.version')}; Groovy ${GroovySystem.version}"
     }
 }
 
-class S3UploadReusult {
+class S3UploadResult {
     String md5
     String path
 }
