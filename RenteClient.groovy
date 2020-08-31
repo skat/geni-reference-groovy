@@ -1,4 +1,3 @@
-
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovyx.net.http.*
@@ -10,14 +9,10 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
+@Grab('org.codehaus.groovy:groovy-json:2.5.12')
 @Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
-@Grab('org.codehaus.groovy:groovy-json:2.4.6')
-@Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
-@Grab('oauth.signpost:signpost-core:1.2.1.2')
-@Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
-@Grab('org.codehaus.groovy:groovy-json:2.4.6')
 class RenteClient {
 
     static final Integer MAX_KONTO_ID_LENGTH = 30
