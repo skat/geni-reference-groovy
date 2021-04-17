@@ -1,12 +1,14 @@
 import groovy.io.FileType
+import groovy.cli.commons.CliBuilder
+import groovy.cli.commons.OptionAccessor
 
 /**
  * Håndterer parsing af command line argumenter.
  */
 class CliHelper {
 
-    public static final validCategories = ['udl\u00e5n', 'indl\u00e5n', 'prioritetsl\u00e5n', 'pantebreve', 'pensiondiverse']
-    public static final Map validCategoryAlias = [
+    public static final List<String> validCategories = ['udl\u00e5n', 'indl\u00e5n', 'prioritetsl\u00e5n', 'pantebreve', 'pensiondiverse']
+    public static final Map<String, String> validCategoryAlias = [
             'ud'       : 'udl\u00e5n',
             'ind'      : 'indl\u00e5n',
             'prioritet': 'prioritetsl\u00e5n',
@@ -17,8 +19,7 @@ class CliHelper {
     static Map parseOptions(args) {
 
         OptionAccessor options
-        CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>',
-                header: 'Options:')
+        CliBuilder cli = new CliBuilder(usage: 'indlever [options] <directory>', header: 'Options:')
         cli.with {
             m longOpt: 'masseindlevering', 'Submit a large amount of reports at once', required: false
             h longOpt: 'help', 'Usage information', required: false
@@ -41,9 +42,9 @@ class CliHelper {
             cli.usage()
             throw new IllegalArgumentException()
         }
-        if (options.arguments().size != 1) {
+        if (options.arguments().size() != 1) {
             cli.usage()
-            throw new IllegalArgumentException("You must provide exactly one directory or otherFile, not ${options.arguments().size}.")
+            throw new IllegalArgumentException("You must provide exactly one directory or otherFile, not ${options.arguments().size()}.")
         }
         if (options.outdir) {
             if (new File(options.outdir).exists()) {

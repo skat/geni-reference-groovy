@@ -1,6 +1,10 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import groovyx.net.http.*
+import groovyx.net.http.ContentType
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.HttpResponseDecorator
+import groovyx.net.http.Method
+import groovyx.net.http.RESTClient
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -9,8 +13,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-@Grab('org.codehaus.groovy:groovy-json:2.5.12')
 @Grab('org.codehaus.groovy.modules.http-builder:http-builder:0.7.2')
+@Grab('org.apache.httpcomponents:httpclient:4.2.1')
 @Grab('oauth.signpost:signpost-core:1.2.1.2')
 @Grab('oauth.signpost:signpost-commonshttp4:1.2.1.2')
 class RenteClient {
@@ -43,7 +47,7 @@ class RenteClient {
                 if (urlTilSvarfil) {
                     printlnVerbose "Henter svarfil fra url '${context.s3OutUrl}$s3Path'"
                     downloadAndUnzipSvarfilFromS3(urlTilSvarfil, s3Path)
-                    println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${new File(context.outdir).absolutePath}"
+                    println "Masseindlevering gennemført. Svarfiler blev udpakket lokalt her: ${Path.of(context.outdir).toAbsolutePath()}"
                     println 'Hav en god dag :)'
                 }
             } else {
@@ -60,7 +64,7 @@ class RenteClient {
         printlnVerbose "config: ${context.toMapString()}"
         def path = "/${context.category}/pligtige/${context.se}/perioder/${context.period}/konti/"
         def dir = new File(context.directory)
-        println "Indberetter ${dir.listFiles().size()} filer i '${context.directory}' til '${context.baseUrl}$path'"
+        println "Indberetter ${dir.listFiles()?.size() ?: 'ingen'} filer i '${context.directory}' til '${context.baseUrl}$path'"
         RESTClient restClient = createRestClient(context.baseUrl)
         findAllExceptHiddenAndDirectories(dir.path).each { File file ->
             String completeUrl = "${path}${file.name}/indleveringer"
@@ -76,7 +80,7 @@ class RenteClient {
                             path: completeUrl,
                             requestContentType: ContentType.BINARY,
                             body: file.bytes
-                    ) { response, json ->
+                    ) { HttpResponseDecorator response, json ->
                         assertResponseStatus(response, 201)
                         println "Indlevering af '${file.name}' returnerede HTTP status ${response.statusLine}"
                         location = response.headers.location
